@@ -5,8 +5,10 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
   state: () => ({
     svgCache: {
       'first-wall': { content: '', viewBox: '0 0 300 200' },
-      'wall-and-corner': { content: '', viewBox: '0 0 300 200' },
+      'corner-selection': { content: '', viewBox: '0 0 300 200' },
+      'next-wall': { content: '', viewBox: '0 0 300 200' },
       'diagonal': { content: '', viewBox: '0 0 300 200' },
+      'fixtures': { content: '', viewBox: '0 0 300 200' },
       'result': { content: '', viewBox: '0 0 300 200' }
     }
   }),
@@ -20,63 +22,92 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       return this.svgCache[stepName]?.viewBox || '0 0 300 200'
     },
 
-    drawFirstWallPreview(length = 250, selectedCorner = null) {
-      const scale = Math.min(200 / Math.max(length, 250), 1)
-      const wallLength = length * scale
-
-      const startX = 50
-      const startY = 100
+    drawFirstWallPreview(length = 250, showQuestionMark = false) {
+      // Фиксированный размер канваса - увеличенная высота
+      const canvasWidth = 300
+      const canvasHeight = 280
+      
+      // Фиксированные координаты для размещения стены
+      const startX = 30
+      const startY = 50
+      const availableWidth = 240 // Доступная ширина для стены
+      
+      // Вычисляем масштаб, чтобы стена поместилась в доступное пространство
+      // Используем более крупный масштаб для лучшей видимости
+      // Базовый масштаб: 1 см = 0.8 единицы SVG (для стены 250 см = 200 единиц)
+      // Это даст хорошую видимость для типичных размеров стен
+      const baseScale = 0.8 // 1 см = 0.8 единицы
+      const minLength = 50
+      const maxLength = 2000
+      const normalizedLength = Math.max(minLength, Math.min(maxLength, length))
+      
+      // Масштабируем длину стены
+      let wallLength = normalizedLength * baseScale
+      
+      // Если стена слишком длинная, уменьшаем масштаб чтобы поместилась
+      if (wallLength > availableWidth) {
+        const scale = availableWidth / normalizedLength
+        wallLength = normalizedLength * scale
+      }
+      
       const endX = startX + wallLength
       const endY = startY
 
-      let allPoints = [
-        { x: startX, y: startY },
-        { x: endX, y: endY }
-      ]
+      const midX = (startX + endX) / 2
 
       let svg = `
-        <g>
+        <svg viewBox="0 0 ${canvasWidth} ${canvasHeight}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#2563EB"/>
+            </marker>
+            <marker id="arrow-start" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+              <polygon points="8 0, 0 3, 8 6" fill="#2563EB"/>
+            </marker>
+            <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#CBD5E1"/>
+            </marker>
+          </defs>
+
+          <!-- Wall line with pulse animation -->
           <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}"
-                class="room-wall" stroke-width="6"/>
-          <rect x="${startX + wallLength * 0.3}" y="94" width="${wallLength * 0.2}" height="12"
-                fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-          <circle cx="${startX}" cy="${startY}" r="6" class="room-corner"/>
-          <circle cx="${endX}" cy="${endY}" r="6" class="room-corner active"/>
-          <text x="${startX}" y="125" class="room-label">A</text>
-          <text x="${endX}" y="125" class="room-label">B</text>
-          <text x="${startX + wallLength/2}" y="85" class="room-dimension">${length} см</text>
-          <text x="${startX + wallLength * 0.4}" y="115" class="room-dimension">дверь</text>
+                stroke="#2563EB" stroke-width="6" stroke-linecap="round">
+            <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite"/>
+          </line>
+
+          <!-- Corner dots -->
+          <circle cx="${startX}" cy="${startY}" r="8" fill="#2563EB"/>
+          <circle cx="${endX}" cy="${endY}" r="8" fill="#2563EB"/>
+
+          <!-- Corner labels -->
+          <text x="${startX}" y="${startY - 15}" text-anchor="middle"
+                font-size="16" font-weight="800" fill="#2563EB">A</text>
+          <text x="${endX}" y="${endY - 15}" text-anchor="middle"
+                font-size="16" font-weight="800" fill="#2563EB">B</text>
+
+          <!-- Measurement arrows -->
+          <line x1="${startX + 10}" y1="${startY + 30}" x2="${endX - 10}" y2="${endY + 30}"
+                stroke="#2563EB" stroke-width="2"
+                marker-end="url(#arrow)" marker-start="url(#arrow-start)"/>
+
+          <!-- Dimension label -->
+          <rect x="${midX - 35}" y="${startY + 18}" width="70" height="28"
+                rx="6" fill="white"/>
+          <text x="${midX}" y="${startY + 38}" text-anchor="middle"
+                font-size="20" font-weight="800" fill="#2563EB">${showQuestionMark ? '?' : (length && length > 0 ? length + ' см' : '?')}</text>
+
+          <!-- You are here -->
+          <circle cx="150" cy="220" r="12" fill="#2563EB"/>
+          <text x="150" y="224" text-anchor="middle"
+                font-size="14" fill="white">👤</text>
+          <text x="150" y="245" text-anchor="middle"
+                font-size="12" font-weight="700" fill="#64748B">Вы здесь</text>
+
+        
+        </svg>
       `
 
-      // Показать предпросмотр выбранного угла
-      if (selectedCorner) {
-        const previewLength = 30
-        let nextX, nextY
-
-        if (selectedCorner === 'inner') {
-          nextX = endX
-          nextY = endY + previewLength  // Поворот направо (вниз)
-        } else {
-          nextX = endX
-          nextY = endY - previewLength  // Поворот налево (вверх)
-        }
-
-        allPoints.push({ x: nextX, y: nextY })
-
-        svg += `
-          <line x1="${endX}" y1="${endY}" x2="${nextX}" y2="${nextY}"
-                class="room-wall" stroke-width="6"/>
-        `
-      }
-
-      svg += `</g>`
-
-      const { minX, minY, maxX, maxY } = calculateBoundingBox(allPoints, 50)
-      const width = maxX - minX
-      const height = maxY - minY
-      const viewBox = `${minX} ${minY} ${width} ${height}`
-
-      this.svgCache['first-wall'] = { content: svg, viewBox }
+      this.svgCache['first-wall'] = { content: svg, viewBox: `0 0 ${canvasWidth} ${canvasHeight}` }
       return svg
     },
 
@@ -273,17 +304,42 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       const points = calculateRoomPointsForPreview(testWalls, testCorners)
       let allPoints = [...points]
       let html = ''
+      let lastWallMidX = null
+      let lastWallY = null
+      let lastWallIsVertical = false
 
       for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i]
         const p2 = points[i + 1]
-        const isNew = i === walls.length
+        
+        // Определяем, является ли эта стена редактируемой (последняя добавленная)
+        const isEditing = i === walls.length && newLength !== null
 
+        if (isEditing) {
+          const midX = (p1.x + p2.x) / 2
+          const midY = (p1.y + p2.y) / 2
+          
+          // Вычисляем нормаль к стене для размещения надписи с внешней стороны
+          const dx = p2.x - p1.x
+          const dy = p2.y - p1.y
+          const length = Math.sqrt(dx * dx + dy * dy) || 1
+          const perpX = -dy / length
+          const perpY = dx / length
+          
+          // Определяем, вертикальная ли стена (изменение по Y больше чем по X)
+          const isVertical = Math.abs(dy) > Math.abs(dx)
+          
+          // Размещаем надпись на расстоянии 15 единиц от стены по нормали
+          lastWallMidX = midX + perpX * 15
+          lastWallY = midY + perpY * 15
+          lastWallIsVertical = isVertical
+        }
+
+        // Стена всегда синяя, не меняем её визуально
         html += `
           <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
-                stroke="${isNew ? '#FF8C00' : '#0066FF'}"
-                stroke-width="${isNew ? '4' : '3'}"
-                stroke-dasharray="${isNew ? '6,4' : 'none'}"/>
+                stroke="#0066FF"
+                stroke-width="3"/>
         `
 
         if (i === 0) {
@@ -300,15 +356,44 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const length = i < walls.length ? walls[i] : newLength
 
         if (length) {
+          // Круг с размером - если редактируется, выделяем его
+          const circleColor = isEditing ? '#10B981' : '#0066FF'
+          const circleStrokeWidth = isEditing ? '3' : '2'
           html += `
-            <circle cx="${midX}" cy="${midY}" r="12" fill="white" stroke="${isNew ? '#FF8C00' : '#0066FF'}" stroke-width="2"/>
-            <text x="${midX}" y="${midY + 3}" class="room-dimension" fill="${isNew ? '#FF8C00' : '#0066FF'}">${length}</text>
+            <circle cx="${midX}" cy="${midY}" r="12" fill="white" stroke="${circleColor}" stroke-width="${circleStrokeWidth}"/>
+            <text x="${midX}" y="${midY + 3}" class="room-dimension" fill="${circleColor}">${length}</text>
           `
+          
+          // Добавляем индикатор редактирования рядом с размером
+          if (isEditing) {
+            const dx = p2.x - p1.x
+            const dy = p2.y - p1.y
+            const len = Math.sqrt(dx*dx + dy*dy) || 1
+            const perpX = -dy / len
+            const perpY = dx / len
+            const indicatorX = midX + perpX * 25
+            const indicatorY = midY + perpY * 25
+            
+            html += `
+              <circle cx="${indicatorX}" cy="${indicatorY}" r="8" fill="#10B981" opacity="0.9">
+                <animate attributeName="opacity" values="0.9;0.5;0.9" dur="1.5s" repeatCount="indefinite"/>
+              </circle>
+              <text x="${indicatorX}" y="${indicatorY + 3}" text-anchor="middle" font-size="10" fill="white" font-weight="700">✎</text>
+            `
+          }
         }
       }
 
-      points.forEach((point, i) => {
-        const isActive = i === points.length - 1
+      // Проверяем, замкнута ли комната (последняя точка близка к первой)
+      const isClosed = points.length > 2 && 
+        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
+                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
+      
+      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
+      const pointsToShow = isClosed ? points.slice(0, -1) : points
+      
+      pointsToShow.forEach((point, i) => {
+        const isActive = !isClosed && i === points.length - 1
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="6"
                   class="room-corner ${isActive ? 'active' : ''}"/>
@@ -344,9 +429,36 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
             html += `
               <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${nextX}" y2="${nextY}"
-                    class="room-wall" stroke-width="6"/>
+                    stroke="#0066FF"
+                    stroke-width="3"/>
             `
           }
+        }
+      }
+
+      // Добавляем надпись "редактируете эту стену" над последней стеной
+      if (lastWallMidX !== null && lastWallY !== null && newLength) {
+        if (lastWallIsVertical) {
+          // Для вертикальной стены - текст горизонтальный, но слова в столбик, сбоку от стены
+          html += `
+            <text x="${lastWallMidX}" y="${lastWallY}" font-size="8" font-weight="400" fill="#64748B" 
+                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
+                  text-anchor="middle" dominant-baseline="middle">
+              <tspan x="${lastWallMidX}" dy="-20">✎ сейчас</tspan>
+              <tspan x="${lastWallMidX}" dy="10">вы</tspan>
+              <tspan x="${lastWallMidX}" dy="10">редактируете</tspan>
+              <tspan x="${lastWallMidX}" dy="10">эту стену</tspan>
+            </text>
+          `
+        } else {
+          // Для горизонтальной стены - обычный текст
+          html += `
+            <text x="${lastWallMidX}" y="${lastWallY}" font-size="10" font-weight="400" fill="#64748B" 
+                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
+                  text-anchor="middle">
+              ✎ сейчас вы редактируете эту стену
+            </text>
+          `
         }
       }
 
@@ -355,7 +467,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       const height = maxY - minY
       const viewBox = `${minX} ${minY} ${width} ${height}`
 
-      this.svgCache['wall-and-corner'] = { content: html, viewBox }
+      this.svgCache['wall-and-corner-old'] = { content: html, viewBox }
       return html
     },
 
@@ -368,24 +480,47 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       let allPoints = [...points]
       let html = ''
 
+      let lastWallMidX = null
+      let lastWallY = null
+      let lastWallIsVertical = false
+
       for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i]
         const p2 = points[i + 1]
-        const isNew = i === walls.length
+        const isLastWall = i === points.length - 2
 
-        html += `
-          <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
-                stroke="${isNew ? '#FF8C00' : '#0066FF'}"
-                stroke-width="${isNew ? '4' : '3'}"
-                stroke-dasharray="${isNew ? '6,4' : 'none'}"/>
-        `
-
-        if (i === 0) {
-          const doorStart = p1.x + (p2.x - p1.x) * 0.3
-          const doorWidth = (p2.x - p1.x) * 0.2
+        // Подсветка последней стены
+        if (isLastWall && newLength) {
+          const midX = (p1.x + p2.x) / 2
+          const midY = (p1.y + p2.y) / 2
+          
+          // Вычисляем нормаль к стене для размещения надписи с внешней стороны
+          const dx = p2.x - p1.x
+          const dy = p2.y - p1.y
+          const length = Math.sqrt(dx * dx + dy * dy) || 1
+          const perpX = -dy / length
+          const perpY = dx / length
+          
+          // Определяем, вертикальная ли стена (изменение по Y больше чем по X)
+          const isVertical = Math.abs(dy) > Math.abs(dx)
+          
+          // Размещаем надпись на расстоянии 15 единиц от стены по нормали
+          lastWallMidX = midX + perpX * 15
+          lastWallY = midY + perpY * 15
+          lastWallIsVertical = isVertical
+          
           html += `
-            <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
-                  fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
+                  stroke="#2563EB"
+                  stroke-width="6" stroke-linecap="round">
+              <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite"/>
+            </line>
+          `
+        } else {
+          html += `
+            <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
+                  stroke="#94A3B8"
+                  stroke-width="3"/>
           `
         }
 
@@ -394,15 +529,52 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const length = i < walls.length ? walls[i] : newLength
 
         if (length) {
+          const labelColor = isLastWall && newLength ? '#2563EB' : '#64748B'
           html += `
-            <circle cx="${midX}" cy="${midY}" r="12" fill="white" stroke="${isNew ? '#FF8C00' : '#0066FF'}" stroke-width="2"/>
-            <text x="${midX}" y="${midY + 3}" class="room-dimension" fill="${isNew ? '#FF8C00' : '#0066FF'}">${length}</text>
+            <rect x="${midX - 20}" y="${midY - 12}" width="40" height="24"
+                  rx="4" fill="white" stroke="${labelColor}" stroke-width="2"/>
+            <text x="${midX}" y="${midY + 4}" text-anchor="middle"
+                  font-size="14" font-weight="700" fill="${labelColor}">${length}</text>
           `
         }
       }
 
-      points.forEach((point, i) => {
-        const isActive = i === points.length - 1
+      // Добавляем надпись "редактируете эту стену" над последней стеной
+      if (lastWallMidX !== null && lastWallY !== null && newLength) {
+        if (lastWallIsVertical) {
+          // Для вертикальной стены - текст горизонтальный, но слова в столбик, сбоку от стены
+          html += `
+            <text x="${lastWallMidX}" y="${lastWallY}" font-size="8" font-weight="400" fill="#64748B" 
+                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
+                  text-anchor="middle" dominant-baseline="middle">
+              <tspan x="${lastWallMidX}" dy="-20">✎ сейчас</tspan>
+              <tspan x="${lastWallMidX}" dy="10">вы</tspan>
+              <tspan x="${lastWallMidX}" dy="10">редактируете</tspan>
+              <tspan x="${lastWallMidX}" dy="10">эту стену</tspan>
+            </text>
+          `
+        } else {
+          // Для горизонтальной стены - обычный текст
+          html += `
+            <text x="${lastWallMidX}" y="${lastWallY}" font-size="10" font-weight="400" fill="#64748B" 
+                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
+                  text-anchor="middle">
+              ✎ сейчас вы редактируете эту стену
+            </text>
+          `
+        }
+      }
+
+      // Проверяем, замкнута ли комната (последняя точка близка к первой)
+      const isClosed = points.length > 2 && 
+        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
+                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
+      
+      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
+      const pointsToShow = isClosed ? points.slice(0, -1) : points
+      
+      pointsToShow.forEach((point, i) => {
+        const isActive = !isClosed && i === points.length - 1
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="6"
                   class="room-corner ${isActive ? 'active' : ''}"/>
@@ -517,7 +689,15 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       }
 
-      points.forEach((point, i) => {
+      // Проверяем, замкнута ли комната (последняя точка близка к первой)
+      const isClosed = points.length > 2 && 
+        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
+                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
+      
+      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
+      const pointsToShow = isClosed ? points.slice(0, -1) : points
+      
+      pointsToShow.forEach((point, i) => {
         const isDiagonalPoint = i === fromIndex || i === toIndex
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="8"
@@ -540,7 +720,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       return html
     },
 
-    drawResultPreview(walls, corners) {
+    drawResultPreview(walls, corners, fixturePositions = { lights: [], pipes: [], other: [] }) {
       const points = calculateRoomPointsForPreview(walls, corners)
       if (points.length < 3) {
         this.svgCache['result'] = { content: '', viewBox: '0 0 300 200' }
@@ -550,6 +730,40 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       let html = ''
       const pointsStr = points.map(p => `${p.x},${p.y}`).join(' ')
       html += `<polygon points="${pointsStr}" fill="rgba(0, 102, 255, 0.1)" stroke="#0066FF" stroke-width="3"/>`
+      
+      // Рисуем светильники
+      fixturePositions.lights.forEach((light) => {
+        html += `
+          <g transform="translate(${light.x}, ${light.y})">
+            <circle r="10" fill="#FFD700" stroke="white" stroke-width="2"/>
+            <circle r="6" fill="none" stroke="white" stroke-width="1.5" opacity="0.8"/>
+            <line x1="-4" y1="0" x2="4" y2="0" stroke="white" stroke-width="1.5"/>
+            <line x1="0" y1="-4" x2="0" y2="4" stroke="white" stroke-width="1.5"/>
+          </g>
+        `
+      })
+
+      // Рисуем трубы
+      fixturePositions.pipes.forEach((pipe) => {
+        html += `
+          <g transform="translate(${pipe.x}, ${pipe.y})">
+            <rect x="-8" y="-8" width="16" height="16" fill="#8B4513" stroke="white" stroke-width="2" rx="2"/>
+            <line x1="-5" y1="0" x2="5" y2="0" stroke="white" stroke-width="1.5"/>
+            <line x1="0" y1="-5" x2="0" y2="5" stroke="white" stroke-width="1.5"/>
+          </g>
+        `
+      })
+
+      // Рисуем другие элементы
+      fixturePositions.other.forEach((other) => {
+        html += `
+          <g transform="translate(${other.x}, ${other.y})">
+            <rect x="-7" y="-7" width="14" height="14" fill="#808080" stroke="white" stroke-width="2" rx="2"/>
+            <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" stroke-width="1.5"/>
+            <line x1="4" y1="-4" x2="-4" y2="4" stroke="white" stroke-width="1.5"/>
+          </g>
+        `
+      })
 
       if (points.length >= 2) {
         const p1 = points[0]
@@ -582,7 +796,15 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       })
 
-      points.forEach((point, i) => {
+      // Проверяем, замкнута ли комната (последняя точка близка к первой)
+      const isClosed = points.length > 2 && 
+        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
+                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
+      
+      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
+      const pointsToShow = isClosed ? points.slice(0, -1) : points
+      
+      pointsToShow.forEach((point, i) => {
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="4" fill="white" stroke="#0066FF" stroke-width="2"/>
           <text x="${point.x + 10}" y="${point.y - 10}" class="room-label">
@@ -597,6 +819,93 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       const viewBox = `${minX} ${minY} ${width} ${height}`
 
       this.svgCache['result'] = { content: html, viewBox }
+      return html
+    },
+
+    drawFixturesPreview(walls, corners, fixturePositions = { lights: [], pipes: [], other: [] }) {
+      const points = calculateRoomPointsForPreview(walls, corners)
+      let html = ''
+
+      // Рисуем стены комнаты
+      for (let i = 0; i < points.length; i++) {
+        const p1 = points[i]
+        const p2 = points[(i + 1) % points.length]
+        html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
+
+        if (i === 0) {
+          const doorStart = p1.x + (p2.x - p1.x) * 0.3
+          const doorWidth = (p2.x - p1.x) * 0.2
+          html += `
+            <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
+                  fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
+          `
+        }
+      }
+
+      // Рисуем светильники (используем актуальные позиции из store)
+      const lights = fixturePositions.lights || []
+      lights.forEach((light) => {
+        if (light && typeof light.x === 'number' && typeof light.y === 'number') {
+          html += `
+            <g class="fixture-item" data-type="lights" data-id="${light.id}" transform="translate(${light.x}, ${light.y})" style="cursor: move;">
+              <circle r="10" fill="#FFD700" stroke="white" stroke-width="2"/>
+              <circle r="6" fill="none" stroke="white" stroke-width="1.5" opacity="0.8"/>
+              <line x1="-4" y1="0" x2="4" y2="0" stroke="white" stroke-width="1.5"/>
+              <line x1="0" y1="-4" x2="0" y2="4" stroke="white" stroke-width="1.5"/>
+            </g>
+          `
+        }
+      })
+
+      // Рисуем трубы (используем актуальные позиции из store)
+      const pipes = fixturePositions.pipes || []
+      pipes.forEach((pipe) => {
+        if (pipe && typeof pipe.x === 'number' && typeof pipe.y === 'number') {
+          html += `
+            <g class="fixture-item" data-type="pipes" data-id="${pipe.id}" transform="translate(${pipe.x}, ${pipe.y})" style="cursor: move;">
+              <rect x="-8" y="-8" width="16" height="16" fill="#8B4513" stroke="white" stroke-width="2" rx="2"/>
+              <line x1="-5" y1="0" x2="5" y2="0" stroke="white" stroke-width="1.5"/>
+              <line x1="0" y1="-5" x2="0" y2="5" stroke="white" stroke-width="1.5"/>
+            </g>
+          `
+        }
+      })
+
+      // Рисуем другие элементы (используем актуальные позиции из store)
+      const other = fixturePositions.other || []
+      other.forEach((item) => {
+        if (item && typeof item.x === 'number' && typeof item.y === 'number') {
+          html += `
+            <g class="fixture-item" data-type="other" data-id="${item.id}" transform="translate(${item.x}, ${item.y})" style="cursor: move;">
+              <rect x="-7" y="-7" width="14" height="14" fill="#808080" stroke="white" stroke-width="2" rx="2"/>
+              <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" stroke-width="1.5"/>
+              <line x1="4" y1="-4" x2="-4" y2="4" stroke="white" stroke-width="1.5"/>
+            </g>
+          `
+        }
+      })
+
+      // Рисуем углы комнаты
+      const isClosed = points.length > 2 && 
+        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
+                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
+      const pointsToShow = isClosed ? points.slice(0, -1) : points
+      
+      pointsToShow.forEach((point, i) => {
+        html += `
+          <circle cx="${point.x}" cy="${point.y}" r="4" fill="white" stroke="#0066FF" stroke-width="2"/>
+          <text x="${point.x + 10}" y="${point.y - 10}" class="room-label">
+            ${String.fromCharCode(65 + i)}
+          </text>
+        `
+      })
+
+      const { minX, minY, maxX, maxY } = calculateBoundingBox(points, 50)
+      const width = maxX - minX
+      const height = maxY - minY
+      const viewBox = `${minX} ${minY} ${width} ${height}`
+
+      this.svgCache['fixtures'] = { content: html, viewBox }
       return html
     }
   }

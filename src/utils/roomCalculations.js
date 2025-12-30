@@ -74,6 +74,38 @@ export function calculateRoomPointsForPreview(walls, corners) {
     });
 }
 
+export function isRoomClosed(walls, corners, newWallLength = null, newCorner = null) {
+    if (walls.length === 0) return false;
+    
+    const testWalls = [...walls];
+    const testCorners = [...corners];
+    
+    if (newWallLength !== null) {
+        testWalls.push(newWallLength);
+        if (newCorner !== null) {
+            testCorners.push(newCorner);
+        }
+    }
+    
+    if (testWalls.length < 3) return false;
+    
+    const points = calculateRoomPointsForPreview(testWalls, testCorners);
+    
+    if (points.length < 3) return false;
+    
+    // Проверяем, замкнулась ли комната (последняя точка близка к первой)
+    const firstPoint = points[0];
+    const lastPoint = points[points.length - 1];
+    
+    const distance = Math.sqrt(
+        Math.pow(lastPoint.x - firstPoint.x, 2) + 
+        Math.pow(lastPoint.y - firstPoint.y, 2)
+    );
+    
+    // Комната считается замкнутой, если расстояние меньше 5 пикселей (с учетом масштаба)
+    return distance < 5;
+}
+
 export function calculateResults(walls) {
     const perimeter = walls.reduce((sum, wall) => sum + wall, 0);
     const perimeterMeters = (perimeter / 100).toFixed(2);

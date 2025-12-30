@@ -1,7 +1,9 @@
 export const STEPS = {
   FIRST_WALL: 'first-wall',
-  WALL_AND_CORNER: 'wall-and-corner',
+  CORNER_SELECTION: 'corner-selection',
+  NEXT_WALL: 'next-wall',
   DIAGONAL: 'diagonal',
+  FIXTURES: 'fixtures',
   RESULT: 'result'
 }
 

@@ -1,346 +1,408 @@
 <template>
-  <div class="compact-layout">
-    <!-- Компактный header -->
-    <div class="compact-header">
-      <div class="header-title">
-        <span class="icon">📏</span>
-        <span>{{ store.nextWallTitle }}</span>
-      </div>
-      <div class="header-hint">Измерьте {{ store.walls.length + 1}}-ю стену по часовой стрелке</div>
+  <div class="wall-and-corner-step">
+    <div class="step-badge">Шаг {{ store.walls.length + 1 }}</div>
+
+    <h1 class="title">{{ store.walls.length === 1 ? 'Следующая стена' : `Стена ${store.walls.length + 1}` }}</h1>
+    <p class="subtitle">Продолжайте измерять по часовой стрелке</p>
+
+    <div class="illustration">
+      <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
     </div>
 
-    <!-- Canvas с overlay элементами -->
-    <div class="canvas-wrapper">
-      <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
-
-      <!-- Input overlay -->
-      <div class="input-overlay">
-        <input
+    <div class="picker-wrapper">
+      <div class="segment-info">
+        <span class="segment-label">Длина стены</span>
+        <span class="segment-points">{{ String.fromCharCode(65 + store.walls.length) }} → {{ String.fromCharCode(66 + store.walls.length) }}</span>
+      </div>
+      <div class="picker-container">
+        <DigitPicker
           v-model="store.inputs.nextWall"
-          type="number"
           :min="50"
           :max="2000"
-          placeholder="Длина стены (см)"
-          class="wall-input"
-          :class="{ error: store.errors.nextWall }"
-          @input="store.handleNextWallInput($event.target.value)"
-          autofocus
+          @update:modelValue="store.handleNextWallInput"
+          @user-interacted="userHasInteracted = true"
         />
-
-        <!-- Выбор угла -->
-        <div class="corner-buttons">
-          <button
-            class="corner-btn"
-            :class="{ active: store.selectedCorner === 'inner' }"
-            @click="store.handleCornerSelection('inner')"
-            title="Внутренний угол (90°)"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 12 L12 12 L12 20"/>
-            </svg>
-          </button>
-          <button
-            class="corner-btn"
-            :class="{ active: store.selectedCorner === 'outer' }"
-            @click="store.handleCornerSelection('outer')"
-            title="Внешний угол (270°)"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 12 L12 12 L12 4"/>
-            </svg>
-          </button>
-        </div>
+        <span class="input-unit">см</span>
       </div>
-
-      <!-- Кнопка "Завершить" слева сверху -->
-      <button
-        v-if="store.walls.length >= 3"
-        class="finish-btn"
-        @click="store.handleFinishRoom"
-      >
-        ✓ Завершить ({{ store.walls.length }} стен)
-      </button>
     </div>
 
-    <!-- Кнопка действия -->
-    <div class="compact-actions">
+    <!-- Выбор угла - показывается только если комната не замкнется -->
+    <div v-if="!store.isRoomClosedWithNewWall" class="corner-section">
+      <h2 class="corner-title">Какой угол справа?</h2>
+
+      <div class="corner-options">
+        <!-- Внутренний угол -->
+        <div
+          class="corner-card"
+          :class="{ active: (store.selectedCorner || 'inner') === 'inner' }"
+          @click="store.handleCornerSelection('inner')"
+        >
+          <div class="corner-visual">
+            <svg viewBox="0 0 80 80" width="80" height="80">
+              <line x1="10" y1="40" x2="40" y2="40" stroke="#2563EB" stroke-width="5" stroke-linecap="round"/>
+              <line x1="40" y1="40" x2="40" y2="70" stroke="#2563EB" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="40" cy="40" r="6" fill="#2563EB"/>
+              <path d="M 50 40 A 10 10 0 0 1 40 50" stroke="#10B981" stroke-width="2.5" fill="none"/>
+              <text x="55" y="55" font-size="12" font-weight="700" fill="#10B981">90°</text>
+            </svg>
+          </div>
+          <div class="corner-info">
+            <div class="corner-label">Внутренний</div>
+          </div>
+        </div>
+
+        <!-- Внешний угол -->
+        <div
+          class="corner-card"
+          :class="{ active: (store.selectedCorner || 'inner') === 'outer' }"
+          @click="store.handleCornerSelection('outer')"
+        >
+          <div class="corner-visual">
+            <svg viewBox="0 0 80 80" width="80" height="80">
+              <line x1="10" y1="40" x2="40" y2="40" stroke="#2563EB" stroke-width="5" stroke-linecap="round"/>
+              <line x1="40" y1="40" x2="40" y2="10" stroke="#2563EB" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="40" cy="40" r="6" fill="#2563EB"/>
+              <path d="M 40 50 A 10 10 0 0 0 50 40" stroke="#F59E0B" stroke-width="2.5" fill="none"/>
+              <path d="M 50 40 A 10 10 0 0 0 40 30" stroke="#F59E0B" stroke-width="2.5" fill="none"/>
+              <path d="M 40 30 A 10 10 0 0 0 30 40" stroke="#F59E0B" stroke-width="2.5" fill="none"/>
+              <path d="M 30 40 A 10 10 0 0 0 40 50" stroke="#F59E0B" stroke-width="2.5" fill="none"/>
+              <text x="20" y="65" font-size="11" font-weight="700" fill="#F59E0B">270°</text>
+            </svg>
+          </div>
+          <div class="corner-info">
+            <div class="corner-label">Внешний</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Сообщение о замкнутой комнате -->
+    <div v-else class="room-closed-alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24">
+        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span>Комната замкнется после добавления этой стены!</span>
+    </div>
+
+    <div class="footer-actions">
       <button
-        class="action-btn primary"
-        :disabled="!store.nextWallValid || !store.selectedCorner"
+        class="next-btn"
+        :class="{ active: store.nextWallValid }"
+        :disabled="!store.nextWallValid"
         @click="store.handleWallAndCornerNext"
       >
-        Далее →
+        {{ store.isRoomClosedWithNewWall ? 'Завершить комнату' : 'Добавить стену' }}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="24" height="24">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useRoomMeasurementStore, useSvgRendererStore } from '../../stores'
 import PreviewArea from '../ui/PreviewArea.vue'
+import DigitPicker from '../ui/DigitPicker.vue'
 
 const store = useRoomMeasurementStore()
 const svgStore = useSvgRendererStore()
 
+const userHasInteracted = ref(false)
+
 const svgContent = computed(() => svgStore.getSvgContent('wall-and-corner'))
 const viewBox = computed(() => svgStore.getViewBox('wall-and-corner'))
 
-const showCornerSelection = ref(false)
-
-// Сбросить выбор угла при возврате к вводу длины
-watch(showCornerSelection, (newVal) => {
-  if (!newVal) {
-    store.selectedCorner = null
-  }
+// Обновляем SVG при изменении значений
+watch([
+  () => store.inputs.nextWall,
+  () => store.selectedCorner
+], () => {
+  const nextWall = parseFloat(store.inputs.nextWall) || 250
+  svgStore.drawWallAndCornerPreview(store.walls, store.corners, nextWall, store.selectedCorner || 'inner')
 })
 
 // Инициализировать SVG при монтировании
 onMounted(() => {
-  svgStore.drawWallAndCornerPreview(store.walls, store.corners, parseFloat(store.inputs.nextWall) || null, store.selectedCorner)
+  // Устанавливаем дефолтное значение 250
+  if (!store.inputs.nextWall) {
+    store.inputs.nextWall = '250'
+  }
+
+  const nextWall = 250
+  svgStore.drawWallAndCornerPreview(store.walls, store.corners, nextWall, store.selectedCorner || 'inner')
 })
 </script>
 
 <style scoped>
-.compact-layout {
+.wall-and-corner-step {
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 12px;
-  padding: 16px;
-}
-
-.compact-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.icon {
-  font-size: 20px;
-}
-
-.header-hint {
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.canvas-wrapper {
-  position: relative;
-  flex: 1;
+  padding: 12px 16px;
+  gap: 0;
+  overflow-y: auto;
   min-height: 0;
 }
 
-.input-overlay {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 2px solid var(--primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  z-index: 10;
-  backdrop-filter: blur(8px);
+.step-badge {
+  align-self: flex-start;
+  background: #EFF6FF;
+  color: #2563EB;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
 }
 
-.wall-input {
-  width: 160px;
-  padding: 8px 12px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  font-weight: 600;
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius-md);
-  background: var(--bg);
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 6px;
   color: var(--text);
-  outline: none;
-  transition: all 0.2s ease;
 }
 
-.wall-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  line-height: 1.3;
 }
 
-.wall-input.error {
-  border-color: #EF4444;
-  animation: shake 0.3s;
-}
-
-.corner-buttons {
-  display: flex;
-  gap: 6px;
-}
-
-.corner-btn {
-  width: 40px;
-  height: 40px;
-  padding: 8px;
+.illustration {
   background: var(--surface);
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  height: 450px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
-.corner-btn svg {
-  stroke: var(--text);
-  transition: stroke 0.2s ease;
+.picker-wrapper {
+  margin-top: auto;
+  margin-bottom: 10px;
+  margin-left: auto;
+  margin-right: auto;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.corner-btn:hover {
-  border-color: var(--primary);
-  transform: scale(1.05);
+.segment-info {
+  text-align: center;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
 }
 
-.corner-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
+.segment-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
-.corner-btn.active svg {
-  stroke: white;
+.segment-points {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
 }
 
-.finish-btn {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 8px 14px;
-  background: rgba(16, 185, 129, 0.95);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(4px);
-  z-index: 5;
-  transition: all 0.2s ease;
+.picker-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
 
-.finish-btn:hover {
-  background: rgba(5, 150, 105, 0.95);
-  transform: scale(1.05);
+.input-unit {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-left: 4px;
 }
 
-.compact-actions {
+.tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #EFF6FF;
+  border-radius: 10px;
+}
+
+.tip-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #2563EB;
+}
+
+.tip-text {
+  font-size: 13px;
+  color: #2563EB;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.corner-section {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.corner-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.corner-options {
   display: flex;
   gap: 12px;
 }
 
-.action-btn {
+.corner-card {
   flex: 1;
-  padding: 14px 20px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  font-weight: 700;
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
+  border: 3px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
-.action-btn.primary {
-  background: var(--primary);
-  color: white;
-  box-shadow: var(--shadow-sm);
+.corner-card:active {
+  transform: scale(0.98);
 }
 
-.action-btn.primary:hover:not(:disabled) {
-  background: var(--primary-dark, #0052CC);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.corner-card.active {
+  border-color: #2563EB;
+  background: #EFF6FF;
 }
 
-.action-btn.primary:disabled {
-  background: var(--border-light);
-  color: var(--text-secondary);
-  cursor: not-allowed;
+.corner-visual {
+  flex-shrink: 0;
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(-50%); }
-  25% { transform: translateX(calc(-50% - 5px)); }
-  75% { transform: translateX(calc(-50% + 5px)); }
+.corner-info {
+  text-align: center;
 }
 
-.mini-step-label {
-  font-size: 13px;
+.corner-label {
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
-  white-space: nowrap;
 }
 
-.next-mini-btn,
-.back-mini-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 12px;
+.room-closed-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #D1FAE5;
+  border: 2px solid #10B981;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  color: #065F46;
+  font-size: 15px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
 }
 
-.next-mini-btn {
+.room-closed-alert svg {
+  flex-shrink: 0;
+  color: #10B981;
+}
+
+.footer-actions {
+  margin-top: auto;
+  padding-top: 10px;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  padding-bottom: 12px;
+}
+
+.next-btn {
+  width: 100%;
+  height: 56px;
+  border: none;
+  border-radius: 12px;
+  background: var(--border-light);
+  color: var(--text-secondary);
+  font-size: 17px;
+  font-weight: 800;
+  cursor: not-allowed;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.next-btn.active {
   background: var(--primary);
   color: white;
+  cursor: pointer;
 }
 
-.back-mini-btn {
-  background: transparent;
-  color: var(--text-secondary);
-  padding: 4px 8px;
-  font-size: 11px;
-}
-
-.next-mini-btn:hover {
-  background: var(--primary-dark, #0052CC);
-  transform: scale(1.05);
-}
-
-.back-mini-btn:hover {
-  color: var(--primary);
-  background: rgba(0, 102, 255, 0.05);
+.next-btn.active:active {
+  transform: scale(0.98);
 }
 
 @media (max-width: 380px) {
-  .header-hint {
-    display: none;
+  .wall-and-corner-step {
+    padding: 10px 14px;
   }
 
-  .wall-input {
-    width: 120px;
+  .title {
+    font-size: 22px;
   }
 
-  .finish-btn {
-    font-size: 11px;
-    padding: 6px 10px;
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .illustration {
+    padding: 10px;
+    height: 150px;
+  }
+
+  .corner-options {
+    flex-direction: column;
+  }
+
+  .next-btn {
+    height: 52px;
+    font-size: 16px;
   }
 }
 </style>

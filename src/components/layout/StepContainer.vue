@@ -43,6 +43,6 @@ defineProps({
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-top: 24px;
+  height: 100%;
 }
 </style>

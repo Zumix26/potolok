@@ -1,6 +1,6 @@
 <template>
   <div class="digit-picker">
-    <div class="digit-scroll" ref="hundreds" @scroll="handleScroll">
+    <div class="digit-scroll" ref="hundreds" @scroll="handleScroll" @wheel.prevent="(e) => handleWheel(e, 'hundreds')">
       <div class="digit-spacer"></div>
       <div
         v-for="digit in 10"
@@ -13,7 +13,7 @@
       <div class="digit-spacer"></div>
     </div>
 
-    <div class="digit-scroll" ref="tens" @scroll="handleScroll">
+    <div class="digit-scroll" ref="tens" @scroll="handleScroll" @wheel.prevent="(e) => handleWheel(e, 'tens')">
       <div class="digit-spacer"></div>
       <div
         v-for="digit in 10"
@@ -26,7 +26,7 @@
       <div class="digit-spacer"></div>
     </div>
 
-    <div class="digit-scroll" ref="ones" @scroll="handleScroll">
+    <div class="digit-scroll" ref="ones" @scroll="handleScroll" @wheel.prevent="(e) => handleWheel(e, 'ones')">
       <div class="digit-spacer"></div>
       <div
         v-for="digit in 10"
@@ -78,13 +78,62 @@ const scrollTimeout = ref(null)
 const isInitialized = ref(false)
 const hasUserInteracted = ref(false)
 
-const ITEM_HEIGHT = 70
+const ITEM_HEIGHT = 50
 
 const currentValue = computed(() => {
   return currentHundreds.value * 100 +
          currentTens.value * 10 +
          currentOnes.value
 })
+
+const handleWheel = (event, type) => {
+  if (!isInitialized.value) return
+
+  // Mark as interacted on first interaction
+  if (!hasUserInteracted.value) {
+    hasUserInteracted.value = true
+    emit('user-interacted')
+  }
+
+  event.preventDefault()
+  
+  const direction = event.deltaY > 0 ? 1 : -1
+  
+  if (type === 'hundreds') {
+    const newValue = Math.max(0, Math.min(9, currentHundreds.value + direction))
+    currentHundreds.value = newValue
+    if (hundreds.value) {
+      hundreds.value.scrollTo({
+        top: newValue * ITEM_HEIGHT,
+        behavior: 'smooth'
+      })
+    }
+  } else if (type === 'tens') {
+    const newValue = Math.max(0, Math.min(9, currentTens.value + direction))
+    currentTens.value = newValue
+    if (tens.value) {
+      tens.value.scrollTo({
+        top: newValue * ITEM_HEIGHT,
+        behavior: 'smooth'
+      })
+    }
+  } else if (type === 'ones') {
+    const newValue = Math.max(0, Math.min(9, currentOnes.value + direction))
+    currentOnes.value = newValue
+    if (ones.value) {
+      ones.value.scrollTo({
+        top: newValue * ITEM_HEIGHT,
+        behavior: 'smooth'
+      })
+    }
+  }
+
+  // Emit value
+  const value = currentValue.value
+  if (value >= props.min && value <= props.max) {
+    emit('update:modelValue', value.toString())
+  }
+}
 
 const handleScroll = () => {
   if (!isInitialized.value) return
@@ -202,7 +251,7 @@ onMounted(() => {
 <style scoped>
 .digit-picker {
   position: relative;
-  height: 220px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -236,16 +285,16 @@ onMounted(() => {
 }
 
 .digit-spacer {
-  height: 105px;
+  height: 55px;
   flex-shrink: 0;
 }
 
 .digit-item {
-  height: 70px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42px;
+  font-size: 32px;
   font-weight: 800;
   color: #CBD5E1;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -257,7 +306,7 @@ onMounted(() => {
 
 .digit-item.active {
   color: var(--text);
-  font-size: 58px;
+  font-size: 44px;
   transform: scale(1.05);
 }
 
@@ -266,7 +315,7 @@ onMounted(() => {
   top: 50%;
   left: 0;
   right: 0;
-  height: 70px;
+  height: 50px;
   transform: translateY(-50%);
   border-top: 3px solid #2563EB;
   border-bottom: 3px solid #2563EB;
@@ -285,7 +334,7 @@ onMounted(() => {
   position: absolute;
   left: 0;
   right: 0;
-  height: 105px;
+  height: 55px;
   pointer-events: none;
   z-index: 2;
 }

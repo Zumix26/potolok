@@ -6,23 +6,25 @@
       :totalSteps="totalSteps"
     />
 
-    <AppHeader
-      :canGoBack="canGoBack"
-      @back="handleBack"
-      @close="closeApp"
-    />
-
     <div class="main-container">
       <StepContainer :isActive="currentStep === 'first-wall'">
         <FirstWallStep />
       </StepContainer>
 
-      <StepContainer :isActive="currentStep === 'wall-and-corner'">
-        <WallAndCornerStep />
+      <StepContainer :isActive="currentStep === 'corner-selection'">
+        <CornerSelectionStep />
+      </StepContainer>
+
+      <StepContainer :isActive="currentStep === 'next-wall'">
+        <NextWallStep />
       </StepContainer>
 
       <StepContainer :isActive="currentStep === 'diagonal'">
         <DiagonalStep />
+      </StepContainer>
+
+      <StepContainer :isActive="currentStep === 'fixtures'">
+        <FixturesStep />
       </StepContainer>
 
       <StepContainer :isActive="currentStep === 'result'">
@@ -38,17 +40,17 @@ import { storeToRefs } from 'pinia'
 import { useRoomMeasurementStore } from './stores'
 
 import ProgressBar from './components/layout/ProgressBar.vue'
-import AppHeader from './components/layout/AppHeader.vue'
 import StepContainer from './components/layout/StepContainer.vue'
 
 import FirstWallStep from './components/steps/FirstWallStep.vue'
-import WallAndCornerStep from './components/steps/WallAndCornerStep.vue'
+import CornerSelectionStep from './components/steps/CornerSelectionStep.vue'
+import NextWallStep from './components/steps/NextWallStep.vue'
 import DiagonalStep from './components/steps/DiagonalStep.vue'
+import FixturesStep from './components/steps/FixturesStep.vue'
 import ResultStep from './components/steps/ResultStep.vue'
 
 const store = useRoomMeasurementStore()
-const { currentStep, stepIndex, totalSteps, progress, canGoBack } = storeToRefs(store)
-const { handleBack, closeApp } = store
+const { currentStep, stepIndex, totalSteps, progress } = storeToRefs(store)
 
 onMounted(() => {
   document.addEventListener('keydown', (e) => {
@@ -62,8 +64,9 @@ onMounted(() => {
 
 <style scoped>
 .main-container {
-  min-height: calc(100vh - 120px);
+  height: calc(100vh - 50px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 </style>

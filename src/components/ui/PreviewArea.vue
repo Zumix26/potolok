@@ -208,10 +208,9 @@ const getDistance = (touch1, touch2) => {
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
-  margin: 24px 0;
   padding: 24px;
   box-shadow: var(--shadow-sm);
-  min-height: 240px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;

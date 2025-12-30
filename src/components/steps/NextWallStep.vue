@@ -1,9 +1,9 @@
 <template>
-  <div class="first-wall-step">
-    <div class="step-badge">Шаг 1</div>
+  <div class="next-wall-step">
+    <div class="step-badge">Шаг {{ store.walls.length + 2 }}</div>
 
-    <h1 class="title">Стена с дверью</h1>
-    <p class="subtitle">Встаньте лицом к двери и измерьте эту стену от угла до угла</p>
+    <h1 class="title">{{ store.walls.length === 1 ? 'Следующая стена' : `Стена ${store.walls.length + 1}` }}</h1>
+    <p class="subtitle">Продолжайте измерять по часовой стрелке</p>
 
     <div class="illustration">
       <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
@@ -12,20 +12,20 @@
     <div class="picker-wrapper">
       <div class="segment-info">
         <span class="segment-label">Длина стены</span>
-        <span class="segment-points">A → B</span>
+        <span class="segment-points">{{ String.fromCharCode(65 + store.walls.length) }} → {{ String.fromCharCode(66 + store.walls.length) }}</span>
       </div>
       <div class="picker-container">
         <DigitPicker
-          v-model="store.inputs.firstWall"
+          v-model="store.inputs.nextWall"
           :min="50"
           :max="2000"
-          @update:modelValue="store.handleFirstWallInput"
+          @update:modelValue="store.handleNextWallInput"
           @user-interacted="userHasInteracted = true"
         />
         <span class="input-unit">см</span>
       </div>
 
-      <div v-if="store.errors.firstWall" class="error-message">
+      <div v-if="store.errors.nextWall" class="error-message">
         ⚠️ Введите значение от 50 до 2000 см
       </div>
     </div>
@@ -42,11 +42,11 @@
       </button>
       <button
         class="next-btn"
-        :class="{ active: store.firstWallValid }"
-        :disabled="!store.firstWallValid"
-        @click="store.handleFirstWallNext"
+        :class="{ active: store.nextWallValid }"
+        :disabled="!store.nextWallValid"
+        @click="store.handleNextWallNext"
       >
-        Далее
+        {{ store.isRoomClosedWithNewWall ? 'Завершить' : 'Далее' }}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
           <path d="M9 18l6-6-6-6"/>
         </svg>
@@ -66,32 +66,31 @@ const svgStore = useSvgRendererStore()
 
 const userHasInteracted = ref(false)
 
-const svgContent = computed(() => svgStore.getSvgContent('first-wall'))
-const viewBox = computed(() => svgStore.getViewBox('first-wall'))
+const svgContent = computed(() => svgStore.getSvgContent('next-wall'))
+const viewBox = computed(() => svgStore.getViewBox('next-wall'))
 
 // Обновляем SVG при изменении значения
-watch(() => store.inputs.firstWall, (newValue) => {
+watch(() => store.inputs.nextWall, (newValue) => {
   if (newValue && newValue !== '') {
     const value = parseFloat(newValue)
-    // Если пользователь взаимодействовал - показываем число, иначе '?'
-    svgStore.drawFirstWallPreview(value, !userHasInteracted.value)
+    svgStore.drawNextWallPreview(store.walls, store.corners, value)
   }
 })
 
 // Инициализировать SVG при монтировании
 onMounted(() => {
-  // Устанавливаем дефолтное значение 250 для валидации и счётчика
-  if (!store.inputs.firstWall) {
-    store.inputs.firstWall = '250'
+  // Устанавливаем дефолтное значение 250
+  if (!store.inputs.nextWall) {
+    store.inputs.nextWall = '250'
   }
 
-  // Рисуем стену 250 см, но показываем '?' на ней
-  svgStore.drawFirstWallPreview(250, true)
+  const nextWall = 250
+  svgStore.drawNextWallPreview(store.walls, store.corners, nextWall)
 })
 </script>
 
 <style scoped>
-.first-wall-step {
+.next-wall-step {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -156,7 +155,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
 }
 
 .segment-info {
@@ -195,22 +193,15 @@ onMounted(() => {
   margin-left: 4px;
 }
 
-.arrow-container {
-  position: relative;
-  width: 100%;
-  height: 40px;
-  margin: -20px 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.arrow-to-canvas {
-  width: 20px;
-  height: 100%;
-  pointer-events: none;
+.error-message {
+  font-size: 12px;
+  color: #EF4444;
+  text-align: center;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 10px;
+  margin-top: 8px;
+  font-weight: 600;
 }
 
 .tip {
@@ -235,17 +226,6 @@ onMounted(() => {
   color: #2563EB;
   line-height: 1.3;
   font-weight: 500;
-}
-
-.error-message {
-  font-size: 12px;
-  color: #EF4444;
-  text-align: center;
-  padding: 10px;
-  background: rgba(239, 68, 68, 0.1);
-  border-radius: 10px;
-  margin-top: 8px;
-  font-weight: 600;
 }
 
 .footer-actions {
@@ -309,7 +289,7 @@ onMounted(() => {
 }
 
 @media (max-width: 380px) {
-  .first-wall-step {
+  .next-wall-step {
     padding: 10px 14px;
   }
 

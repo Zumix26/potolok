@@ -10,12 +10,36 @@
 
     <div class="result-grid">
       <div class="result-card">
+        <div class="result-icon">📏</div>
         <div class="result-value">{{ store.results.perimeter }}</div>
-        <div class="result-label">Периметр (м)</div>
+        <div class="result-label">Периметр</div>
+        <div class="result-unit">метров</div>
       </div>
       <div class="result-card">
+        <div class="result-icon">📐</div>
         <div class="result-value">{{ store.results.area }}</div>
-        <div class="result-label">Площадь (м²)</div>
+        <div class="result-label">Площадь</div>
+        <div class="result-unit">квадратных метров</div>
+      </div>
+    </div>
+
+    <!-- Информация о диагоналях -->
+    <div v-if="store.diagonals.length > 0" class="diagonals-info">
+      <div class="info-title">
+        <span class="info-icon">📐</span>
+        <span>Добавленные диагонали ({{ store.diagonals.length }})</span>
+      </div>
+      <div class="diagonals-list">
+        <div
+          v-for="(diagonal, index) in store.diagonals"
+          :key="index"
+          class="diagonal-item"
+        >
+          <span class="diagonal-label">
+            {{ String.fromCharCode(65 + diagonal.from) }} → {{ String.fromCharCode(65 + diagonal.to) }}
+          </span>
+          <span class="diagonal-length">{{ diagonal.length }} см</span>
+        </div>
       </div>
     </div>
   </div>
@@ -50,7 +74,7 @@ const viewBox = computed(() => svgStore.getViewBox('result'))
 
 // Инициализировать SVG при монтировании
 onMounted(() => {
-  svgStore.drawResultPreview(store.walls, store.corners)
+  svgStore.drawResultPreview(store.walls, store.corners, store.fixturePositions)
 })
 
 const stepIcon = `
@@ -81,27 +105,111 @@ const shareIcon = `
 }
 
 .result-card {
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 20px;
+  background: linear-gradient(135deg, var(--surface), var(--primary-light));
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-lg);
+  padding: 24px 20px;
   text-align: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-md);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+}
+
+.result-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.result-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .result-value {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
 }
 
 .result-label {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.result-unit {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.diagonals-info {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.info-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.info-icon {
+  font-size: 18px;
+}
+
+.diagonals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.diagonal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.diagonal-label {
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.diagonal-length {
+  font-weight: 700;
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
 }
 </style>
