@@ -50,7 +50,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
       // Показать предпросмотр выбранного угла
       if (selectedCorner) {
-        const previewLength = 60
+        const previewLength = 30
         let nextX, nextY
 
         if (selectedCorner === 'inner') {
@@ -65,21 +65,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
         svg += `
           <line x1="${endX}" y1="${endY}" x2="${nextX}" y2="${nextY}"
-                stroke="#10B981" stroke-width="3" stroke-dasharray="5,3" opacity="0.6"/>
-          <circle cx="${nextX}" cy="${nextY}" r="6" fill="#10B981" opacity="0.6"/>
-          <text x="${nextX + 15}" y="${nextY + 5}" class="room-label" fill="#10B981">C?</text>
-        `
-
-        // Добавить дугу угла
-        const arcRadius = 20
-        svg += `
-          <path d="M ${endX - arcRadius} ${endY} A ${arcRadius} ${arcRadius} 0 0 ${selectedCorner === 'inner' ? '0' : '1'} ${endX} ${endY + (selectedCorner === 'inner' ? arcRadius : -arcRadius)}"
-                stroke="${selectedCorner === 'inner' ? '#10B981' : '#F59E0B'}"
-                stroke-width="2" fill="none" stroke-dasharray="3,2" opacity="0.7"/>
-          <text x="${endX + 25}" y="${endY + (selectedCorner === 'inner' ? 15 : -5)}" class="room-dimension"
-                fill="${selectedCorner === 'inner' ? '#10B981' : '#F59E0B'}" font-weight="700" font-size="10">
-            ${selectedCorner === 'inner' ? '90°' : '270°'}
-          </text>
+                class="room-wall" stroke-width="6"/>
         `
       }
 
@@ -242,33 +228,8 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
               html += `
                 <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${nextX}" y2="${nextY}"
-                      stroke="#FF8C00" stroke-width="3" stroke-dasharray="5,3"/>
-                <circle cx="${nextX}" cy="${nextY}" r="6" class="room-corner next"/>
-                <text x="${nextX + 15}" y="${nextY + 5}" class="room-label" fill="#FF8C00">
-                  ${String.fromCharCode(65 + points.length)}?
-                </text>
+                      class="room-wall" stroke-width="6"/>
               `
-
-              const arcRadius = 25
-              const startX = lastPoint.x + Math.cos(currentAngle - Math.PI) * arcRadius
-              const startY = lastPoint.y + Math.sin(currentAngle - Math.PI) * arcRadius
-              const endX = lastPoint.x + Math.cos(nextAngle) * arcRadius
-              const endY = lastPoint.y + Math.sin(nextAngle) * arcRadius
-
-              if (!isNaN(startX) && !isNaN(startY) && !isNaN(endX) && !isNaN(endY)) {
-                // Поворот направо (inner) = против часовой в локальной системе = sweep-flag 0
-                // Поворот налево (outer) = по часовой в локальной системе = sweep-flag 1
-                const sweepFlag = cornerType === 'inner' ? 0 : 1
-                html += `
-                  <path d="M ${startX} ${startY} A ${arcRadius} ${arcRadius} 0 0 ${sweepFlag} ${endX} ${endY}"
-                        stroke="${cornerType === 'inner' ? '#10B981' : '#F59E0B'}"
-                        stroke-width="3" fill="none" stroke-dasharray="3,2"/>
-                  <text x="${lastPoint.x + 30}" y="${lastPoint.y - 10}" class="room-dimension"
-                        fill="${cornerType === 'inner' ? '#10B981' : '#F59E0B'}" font-weight="700">
-                    ${cornerType === 'inner' ? '90°' : '270°'}
-                  </text>
-                `
-              }
             }
           }
         }
@@ -374,7 +335,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
             nextAngle = currentAngle - Math.PI / 2  // Поворот налево
           }
 
-          const previewLength = 60
+          const previewLength = 30
           const nextX = lastPoint.x + Math.cos(nextAngle) * previewLength
           const nextY = lastPoint.y + Math.sin(nextAngle) * previewLength
 
@@ -383,32 +344,8 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
             html += `
               <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${nextX}" y2="${nextY}"
-                    stroke="#10B981" stroke-width="3" stroke-dasharray="5,3" opacity="0.6"/>
-              <circle cx="${nextX}" cy="${nextY}" r="6" fill="#10B981" opacity="0.6"/>
-              <text x="${nextX + 15}" y="${nextY + 5}" class="room-label" fill="#10B981">
-                ${String.fromCharCode(65 + points.length)}?
-              </text>
+                    class="room-wall" stroke-width="6"/>
             `
-
-            // Добавить дугу угла
-            const arcRadius = 25
-            const startX = lastPoint.x + Math.cos(currentAngle - Math.PI) * arcRadius
-            const startY = lastPoint.y + Math.sin(currentAngle - Math.PI) * arcRadius
-            const endX = lastPoint.x + Math.cos(nextAngle) * arcRadius
-            const endY = lastPoint.y + Math.sin(nextAngle) * arcRadius
-
-            if (!isNaN(startX) && !isNaN(startY) && !isNaN(endX) && !isNaN(endY)) {
-              const sweepFlag = displayCorner === 'inner' ? 0 : 1
-              html += `
-                <path d="M ${startX} ${startY} A ${arcRadius} ${arcRadius} 0 0 ${sweepFlag} ${endX} ${endY}"
-                      stroke="${displayCorner === 'inner' ? '#10B981' : '#F59E0B'}"
-                      stroke-width="2" fill="none" stroke-dasharray="3,2" opacity="0.7"/>
-                <text x="${lastPoint.x + 30}" y="${lastPoint.y - 10}" class="room-dimension"
-                      fill="${displayCorner === 'inner' ? '#10B981' : '#F59E0B'}" font-weight="700" font-size="10">
-                  ${displayCorner === 'inner' ? '90°' : '270°'}
-                </text>
-              `
-            }
           }
         }
       }

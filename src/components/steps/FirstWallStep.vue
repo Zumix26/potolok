@@ -1,77 +1,75 @@
 <template>
-  <div class="step-content">
-    <StepHeader
-      :icon="stepIcon"
-      title="Стена с дверью"
-      subtitle="Начните замер со стены, в которой находится дверь в комнату"
-    />
-
-    <HelperText
-      icon="💡"
-      text="Встаньте лицом к стене с дверью и измерьте её длину рулеткой"
-    />
-
-    <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
-
-    <InputField
-      v-model="store.inputs.firstWall"
-      placeholder="250"
-      :min="50"
-      :max="2000"
-      unit="сантиметры"
-      hint="Введите длину стены в сантиметрах"
-      :hasError="store.errors.firstWall"
-      @update:modelValue="store.handleFirstWallInput"
-    />
-
-    <div class="corner-selection">
-      <CornerOption
-        type="inner"
-        title="Внутренний угол"
-        description="Комната поворачивает внутрь (обычный угол)"
-        :svgContent="innerCornerSvg"
-        :isSelected="store.selectedCorner === 'inner'"
-        @select="store.handleCornerSelection('inner')"
-      />
-
-      <CornerOption
-        type="outer"
-        title="Внешний угол"
-        description="Выступ или ниша (L-образный поворот)"
-        :svgContent="outerCornerSvg"
-        :isSelected="store.selectedCorner === 'outer'"
-        @select="store.handleCornerSelection('outer')"
-      />
+  <div class="compact-layout">
+    <!-- Компактный header -->
+    <div class="compact-header">
+      <div class="header-title">
+        <span class="icon">🚪</span>
+        <span>Стена с дверью</span>
+      </div>
+      <div class="header-hint">Начните со стены, где находится дверь</div>
     </div>
 
-    <HelperText
-      icon="🧭"
-      text="Внутренний угол - обычный угол комнаты. Внешний угол - выступ или ниша"
-    />
-  </div>
+    <!-- Canvas с overlay элементами -->
+    <div class="canvas-wrapper">
+      <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
 
-  <ActionButtons>
-    <PrimaryButton
-      label="Далее"
-      :icon="nextIcon"
-      :disabled="!store.firstWallValid || !store.selectedCorner"
-      @click="store.handleFirstWallNext"
-    />
-  </ActionButtons>
+      <!-- Input overlay -->
+      <div class="input-overlay">
+        <input
+          v-model="store.inputs.firstWall"
+          type="number"
+          :min="50"
+          :max="2000"
+          placeholder="Длина стены (см)"
+          class="wall-input"
+          :class="{ error: store.errors.firstWall }"
+          @input="store.handleFirstWallInput($event.target.value)"
+          autofocus
+        />
+
+        <!-- Выбор угла -->
+        <div class="corner-buttons">
+          <button
+            class="corner-btn"
+            :class="{ active: store.selectedCorner === 'inner' }"
+            @click="store.handleCornerSelection('inner')"
+            title="Внутренний угол (90°)"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12 L12 12 L12 20"/>
+            </svg>
+          </button>
+          <button
+            class="corner-btn"
+            :class="{ active: store.selectedCorner === 'outer' }"
+            @click="store.handleCornerSelection('outer')"
+            title="Внешний угол (270°)"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12 L12 12 L12 4"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Кнопка действия -->
+    <div class="compact-actions">
+      <button
+        class="action-btn primary"
+        :disabled="!store.firstWallValid || !store.selectedCorner"
+        @click="store.handleFirstWallNext"
+      >
+        Далее →
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
 import { useRoomMeasurementStore, useSvgRendererStore } from '../../stores'
-
-import StepHeader from '../ui/StepHeader.vue'
 import PreviewArea from '../ui/PreviewArea.vue'
-import InputField from '../ui/InputField.vue'
-import PrimaryButton from '../ui/PrimaryButton.vue'
-import ActionButtons from '../ui/ActionButtons.vue'
-import HelperText from '../ui/HelperText.vue'
-import CornerOption from '../ui/CornerOption.vue'
 
 const store = useRoomMeasurementStore()
 const svgStore = useSvgRendererStore()
@@ -83,61 +81,179 @@ const viewBox = computed(() => svgStore.getViewBox('first-wall'))
 onMounted(() => {
   svgStore.drawFirstWallPreview(parseFloat(store.inputs.firstWall) || 250, store.selectedCorner)
 })
-
-const stepIcon = `
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <rect x="3" y="4" width="18" height="2"/>
-    <rect x="3" y="18" width="18" height="2"/>
-    <rect x="11" y="6" width="2" height="12"/>
-  </svg>
-`
-
-const nextIcon = `
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M5 12h14M12 5l7 7-7 7"/>
-  </svg>
-`
-
-const innerCornerSvg = `
-  <svg viewBox="0 0 60 60" fill="none">
-    <path d="M10 30 L30 30 L30 50" stroke="#0066FF" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <path d="M25 30 A5 5 0 0 0 30 35" stroke="#10B981" stroke-width="2" fill="none"/>
-    <circle cx="30" cy="30" r="3" fill="#0066FF"/>
-    <text x="35" y="42" font-size="9" fill="#10B981" font-weight="700">90°</text>
-    <path d="M15 25 L20 30 L15 35" stroke="#0066FF" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M25 45 L30 40 L35 45" stroke="#0066FF" stroke-width="2" fill="none" stroke-linecap="round"/>
-  </svg>
-`
-
-const outerCornerSvg = `
-  <svg viewBox="0 0 60 60" fill="none">
-    <path d="M10 30 L30 30 L30 10" stroke="#0066FF" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <path d="M25 30 A10 10 0 1 1 30 20" stroke="#F59E0B" stroke-width="2" fill="none"/>
-    <circle cx="30" cy="30" r="3" fill="#0066FF"/>
-    <text x="12" y="20" font-size="8" fill="#F59E0B" font-weight="700">270°</text>
-    <path d="M15 25 L20 30 L15 35" stroke="#0066FF" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <path d="M25 15 L30 20 L35 15" stroke="#0066FF" stroke-width="2" fill="none" stroke-linecap="round"/>
-  </svg>
-`
 </script>
 
 <style scoped>
-.step-content {
-  flex: 1;
+.compact-layout {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  padding: 16px;
 }
 
-.corner-selection {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin: 24px 0 16px;
+.compact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.icon {
+  font-size: 20px;
+}
+
+.header-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.canvas-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.input-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+.wall-input {
+  width: 160px;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.wall-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+}
+
+.wall-input.error {
+  border-color: #EF4444;
+  animation: shake 0.3s;
+}
+
+.corner-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.corner-btn {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: var(--surface);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.corner-btn svg {
+  stroke: var(--text);
+  transition: stroke 0.2s ease;
+}
+
+.corner-btn:hover {
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.corner-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.corner-btn.active svg {
+  stroke: white;
+}
+
+.compact-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn.primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.action-btn.primary:hover:not(:disabled) {
+  background: var(--primary-dark, #0052CC);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.action-btn.primary:disabled {
+  background: var(--border-light);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 5px)); }
+  75% { transform: translateX(calc(-50% + 5px)); }
 }
 
 @media (max-width: 380px) {
-  .corner-selection {
-    gap: 12px;
+  .header-hint {
+    display: none;
+  }
+
+  .wall-input {
+    width: 120px;
   }
 }
 </style>
