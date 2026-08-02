@@ -1,65 +1,83 @@
 <template>
   <div class="number-counter">
     <div class="counter-group">
-      <button 
-        class="counter-btn up" 
-        @click="increment(0)"
-        :disabled="digits[0] >= 9"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 15l-6-6-6 6"/>
+      <button class="counter-btn up" :disabled="digits[0] >= 9" @click="increment(0)">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M18 15l-6-6-6 6" />
         </svg>
       </button>
       <div class="counter-display">{{ digits[0] }}</div>
-      <button 
-        class="counter-btn down" 
-        @click="decrement(0)"
-        :disabled="digits[0] <= 0"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 9l6 6 6-6"/>
+      <button class="counter-btn down" :disabled="digits[0] <= 0" @click="decrement(0)">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
     </div>
     <div class="counter-group">
-      <button 
-        class="counter-btn up" 
-        @click="increment(1)"
-        :disabled="digits[1] >= 9"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 15l-6-6-6 6"/>
+      <button class="counter-btn up" :disabled="digits[1] >= 9" @click="increment(1)">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M18 15l-6-6-6 6" />
         </svg>
       </button>
       <div class="counter-display">{{ digits[1] }}</div>
-      <button 
-        class="counter-btn down" 
-        @click="decrement(1)"
-        :disabled="digits[1] <= 0"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 9l6 6 6-6"/>
+      <button class="counter-btn down" :disabled="digits[1] <= 0" @click="decrement(1)">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
     </div>
     <div class="counter-group">
-      <button 
-        class="counter-btn up" 
-        @click="increment(2)"
-        :disabled="digits[2] >= 9"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 15l-6-6-6 6"/>
+      <button class="counter-btn up" :disabled="digits[2] >= 9" @click="increment(2)">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M18 15l-6-6-6 6" />
         </svg>
       </button>
       <div class="counter-display">{{ digits[2] }}</div>
-      <button 
-        class="counter-btn down" 
-        @click="decrement(2)"
-        :disabled="digits[2] <= 0"
-      >
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 9l6 6 6-6"/>
+      <button class="counter-btn down" :disabled="digits[2] <= 0" @click="decrement(2)">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
     </div>
@@ -67,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -97,31 +115,27 @@ const digits = ref([2, 5, 0])
 const initDigits = () => {
   const num = getValue()
   const str = num.toString().padStart(3, '0')
-  digits.value = [
-    parseInt(str[0]) || 0,
-    parseInt(str[1]) || 0,
-    parseInt(str[2]) || 0
-  ]
+  digits.value = [parseInt(str[0]) || 0, parseInt(str[1]) || 0, parseInt(str[2]) || 0]
 }
 
-watch(() => props.modelValue, () => {
-  initDigits()
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  () => {
+    initDigits()
+  },
+  { immediate: true }
+)
 
 // Обновление значения при изменении цифр
 const updateValue = () => {
   const newValue = digits.value[0] * 100 + digits.value[1] * 10 + digits.value[2]
   const clamped = Math.max(props.min, Math.min(props.max, newValue))
   emit('update:modelValue', clamped.toString())
-  
+
   // Если значение было скорректировано, обновить цифры
   if (clamped !== newValue) {
     const str = clamped.toString().padStart(3, '0')
-    digits.value = [
-      parseInt(str[0]) || 0,
-      parseInt(str[1]) || 0,
-      parseInt(str[2]) || 0
-    ]
+    digits.value = [parseInt(str[0]) || 0, parseInt(str[1]) || 0, parseInt(str[2]) || 0]
   }
 }
 
@@ -206,4 +220,3 @@ const decrement = (index) => {
   background: var(--primary-light);
 }
 </style>
-

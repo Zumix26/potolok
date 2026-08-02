@@ -1,9 +1,5 @@
 <template>
-  <button
-    class="btn secondary"
-    :disabled="disabled"
-    @click="$emit('click')"
-  >
+  <button class="btn secondary" :disabled="disabled" @click="$emit('click')">
     {{ label }}
   </button>
 </template>

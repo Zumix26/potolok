@@ -5,8 +5,8 @@
     <div class="picker-selection"></div>
 
     <div
-      class="picker-scroll"
       ref="scrollContainer"
+      class="picker-scroll"
       @scroll="handleScroll"
       @touchstart="handleTouchStart"
       @touchend="handleTouchEnd"
@@ -117,17 +117,20 @@ const scrollToValue = (value) => {
 }
 
 // Следим за изменением modelValue извне
-watch(() => props.modelValue, (newValue) => {
-  if (newValue && parseInt(newValue) !== selectedValue.value) {
-    scrollToValue(newValue)
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (newValue && parseInt(newValue) !== selectedValue.value) {
+      scrollToValue(newValue)
+    }
   }
-})
+)
 
 onMounted(async () => {
   await nextTick()
 
   // Устанавливаем начальное значение
-  const initialValue = props.modelValue ? parseInt(props.modelValue) : (props.min + 100)
+  const initialValue = props.modelValue ? parseInt(props.modelValue) : props.min + 100
   scrollToValue(initialValue)
   emit('update:modelValue', initialValue.toString())
 })
@@ -165,7 +168,7 @@ onMounted(async () => {
   justify-content: center;
   font-size: 28px;
   font-weight: 700;
-  color: #CBD5E1;
+  color: #cbd5e1;
   transition: all 0.2s;
   scroll-snap-align: center;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;

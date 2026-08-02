@@ -3,20 +3,21 @@
     <!-- Блок с подсказками -->
     <div class="hints-block">
       <div class="hint-item">
-        <span class="hint-text">Укажите количество светильников, труб и других элементов, которые нужно учесть при расчете потолка</span>
+        <span class="hint-text"
+          >Укажите количество светильников, труб и других элементов, которые нужно учесть при
+          расчете потолка</span
+        >
       </div>
       <div class="hint-item">
-        <span class="hint-text">После указания количества, перетаскивайте элементы на схеме для точного размещения</span>
+        <span class="hint-text"
+          >После указания количества, перетаскивайте элементы на схеме для точного размещения</span
+        >
       </div>
     </div>
 
     <!-- Canvas -->
     <div class="canvas-wrapper">
-      <PreviewArea 
-        :svgContent="svgContent" 
-        :viewBox="viewBox"
-        @fixture-drag="handleFixtureDrag"
-      />
+      <PreviewArea :svg-content="svgContent" :viewBox="viewBox" @fixture-drag="handleFixtureDrag" />
     </div>
 
     <!-- Форма добавления элементов -->
@@ -26,9 +27,21 @@
           <span>Светильники</span>
         </div>
         <div class="input-group">
-          <button class="counter-btn" @click="decrementFixture" :disabled="(parseInt(store.inputs.fixtureCount) || 0) <= 0">-</button>
+          <button
+            class="counter-btn"
+            :disabled="(parseInt(store.inputs.fixtureCount) || 0) <= 0"
+            @click="decrementFixture"
+          >
+            -
+          </button>
           <span class="counter-value">{{ store.inputs.fixtureCount }}</span>
-          <button class="counter-btn" @click="incrementFixture" :disabled="(parseInt(store.inputs.fixtureCount) || 0) >= 100">+</button>
+          <button
+            class="counter-btn"
+            :disabled="(parseInt(store.inputs.fixtureCount) || 0) >= 100"
+            @click="incrementFixture"
+          >
+            +
+          </button>
           <span class="input-label-small">шт.</span>
         </div>
       </div>
@@ -38,9 +51,21 @@
           <span>Трубы и коммуникации</span>
         </div>
         <div class="input-group">
-          <button class="counter-btn" @click="decrementPipe" :disabled="(parseInt(store.inputs.pipeCount) || 0) <= 0">-</button>
+          <button
+            class="counter-btn"
+            :disabled="(parseInt(store.inputs.pipeCount) || 0) <= 0"
+            @click="decrementPipe"
+          >
+            -
+          </button>
           <span class="counter-value">{{ store.inputs.pipeCount }}</span>
-          <button class="counter-btn" @click="incrementPipe" :disabled="(parseInt(store.inputs.pipeCount) || 0) >= 50">+</button>
+          <button
+            class="counter-btn"
+            :disabled="(parseInt(store.inputs.pipeCount) || 0) >= 50"
+            @click="incrementPipe"
+          >
+            +
+          </button>
           <span class="input-label-small">шт.</span>
         </div>
       </div>
@@ -50,9 +75,21 @@
           <span>Другие элементы</span>
         </div>
         <div class="input-group">
-          <button class="counter-btn" @click="decrementOther" :disabled="(parseInt(store.inputs.otherCount) || 0) <= 0">-</button>
+          <button
+            class="counter-btn"
+            :disabled="(parseInt(store.inputs.otherCount) || 0) <= 0"
+            @click="decrementOther"
+          >
+            -
+          </button>
           <span class="counter-value">{{ store.inputs.otherCount }}</span>
-          <button class="counter-btn" @click="incrementOther" :disabled="(parseInt(store.inputs.otherCount) || 0) >= 50">+</button>
+          <button
+            class="counter-btn"
+            :disabled="(parseInt(store.inputs.otherCount) || 0) >= 50"
+            @click="incrementOther"
+          >
+            +
+          </button>
           <span class="input-label-small">шт.</span>
         </div>
       </div>
@@ -62,28 +99,42 @@
         <button
           class="action-btn back-btn-small"
           :disabled="!store.canGoBack"
-          @click="store.handleBack"
           title="Назад"
+          @click="store.handleBack"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </button>
         <button
           class="action-btn secondary"
-          @click="store.handleSkipFixtures"
           title="Пропустить добавление элементов"
+          @click="store.handleSkipFixtures"
         >
           Пропустить
         </button>
         <button
           class="action-btn primary"
-          @click="store.handleFinishFixtures"
           title="Завершить и перейти к результатам"
+          @click="store.handleFinishFixtures"
         >
           Завершить
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </button>
       </div>
@@ -92,7 +143,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoomMeasurementStore, useSvgRendererStore } from '../../stores'
 import PreviewArea from '../ui/PreviewArea.vue'
 
@@ -148,28 +199,6 @@ const decrementOther = () => {
   }
 }
 
-// Функция для сохранения текущих позиций из DOM перед перерисовкой
-const saveCurrentPositions = () => {
-  const svgElement = document.querySelector('.preview-svg')
-  if (!svgElement) return
-  
-  // Сохраняем позиции всех элементов из DOM
-  const fixtureItems = svgElement.querySelectorAll('.fixture-item')
-  fixtureItems.forEach((item) => {
-    const type = item.dataset.type
-    const id = parseInt(item.dataset.id)
-    const transform = item.getAttribute('transform')
-    const match = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
-    if (match) {
-      const x = parseFloat(match[1])
-      const y = parseFloat(match[2])
-      store.updateFixturePosition(type, id, x, y)
-    }
-  })
-}
-
-// Watch больше не нужен, так как сохранение позиций происходит в store методах
-
 // Инициализировать SVG при монтировании
 onMounted(() => {
   svgStore.drawFixturesPreview(store.walls, store.corners, store.fixturePositions)
@@ -193,8 +222,8 @@ onMounted(() => {
   flex-direction: row;
   gap: 8px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  border: 2px solid #2563EB;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #2563eb;
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
   flex-shrink: 0;
@@ -205,7 +234,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #1E40AF;
+  color: #1e40af;
   line-height: 1.3;
   font-weight: 600;
   flex: 1;
@@ -227,7 +256,7 @@ onMounted(() => {
   background: var(--surface);
   border-radius: 14px;
   padding: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   flex-shrink: 1;
   overflow: hidden;
 }
@@ -240,7 +269,7 @@ onMounted(() => {
   background: var(--surface);
   border: 2px solid var(--border-light);
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
 }
 
@@ -337,12 +366,14 @@ onMounted(() => {
   outline: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .fixture-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 2px 8px rgba(37, 99, 235, 0.2);
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.15),
+    0 2px 8px rgba(37, 99, 235, 0.2);
   background: var(--surface);
 }
 
@@ -377,7 +408,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .back-btn-small:hover:not(:disabled) {
@@ -385,7 +416,7 @@ onMounted(() => {
   color: var(--primary);
   background: rgba(37, 99, 235, 0.05);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .back-btn-small:active:not(:disabled) {
@@ -415,7 +446,7 @@ onMounted(() => {
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
   color: white;
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
   display: flex;
@@ -442,14 +473,14 @@ onMounted(() => {
   background: var(--surface);
   color: var(--text);
   border: 3px solid var(--border-light);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .action-btn.secondary:hover {
   border-color: var(--primary);
   color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .action-btn.secondary:active {
@@ -528,4 +559,3 @@ onMounted(() => {
   }
 }
 </style>
-

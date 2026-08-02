@@ -1,10 +1,7 @@
 <template>
-  <button
-    class="btn primary"
-    :disabled="disabled"
-    @click="$emit('click')"
-  >
+  <button class="btn primary" :disabled="disabled" @click="$emit('click')">
     {{ label }}
+    <!-- eslint-disable-next-line vue/no-v-html -- icon is a hardcoded SVG string prop, never user text -->
     <div v-if="icon" v-html="icon" />
   </button>
 </template>

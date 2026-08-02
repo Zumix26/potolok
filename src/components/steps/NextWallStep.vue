@@ -2,26 +2,36 @@
   <div class="next-wall-step">
     <div class="instruction-box">
       <div class="instruction-content">
-        <p class="instruction-text">Подойдите ко {{ store.walls.length === 1 ? 'второй' : `стене ${store.walls.length + 1}` }} и встаньте лицом к ней</p>
-        <p class="instruction-detail">Измерьте длину стены {{ String.fromCharCode(65 + store.walls.length) }} → {{ String.fromCharCode(66 + store.walls.length) }} от угла до угла</p>
+        <p class="instruction-text">
+          Подойдите ко
+          {{ store.walls.length === 1 ? 'второй' : `стене ${store.walls.length + 1}` }} и встаньте
+          лицом к ней
+        </p>
+        <p class="instruction-detail">
+          Измерьте длину стены {{ String.fromCharCode(65 + store.walls.length) }} →
+          {{ String.fromCharCode(66 + store.walls.length) }} от угла до угла
+        </p>
       </div>
     </div>
 
     <div class="illustration">
-      <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
+      <PreviewArea :svg-content="svgContent" :viewBox="viewBox" />
     </div>
 
     <div class="picker-wrapper">
       <div class="segment-info">
         <span class="segment-label">Длина стены</span>
-        <span class="segment-points">{{ String.fromCharCode(65 + store.walls.length) }} → {{ String.fromCharCode(66 + store.walls.length) }}</span>
+        <span class="segment-points"
+          >{{ String.fromCharCode(65 + store.walls.length) }} →
+          {{ String.fromCharCode(66 + store.walls.length) }}</span
+        >
       </div>
       <div class="picker-container">
         <DigitPicker
           v-model="store.inputs.nextWall"
           :min="50"
           :max="2000"
-          @update:modelValue="store.handleNextWallInput"
+          @update:model-value="store.handleNextWallInput"
           @user-interacted="userHasInteracted = true"
         />
         <span class="input-unit">см</span>
@@ -33,13 +43,16 @@
     </div>
 
     <div class="footer-actions">
-      <button
-        v-if="store.canGoBack"
-        class="back-btn"
-        @click="store.handleBack"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
-          <path d="M15 18l-6-6 6-6"/>
+      <button v-if="store.canGoBack" class="back-btn" @click="store.handleBack">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          width="20"
+          height="20"
+        >
+          <path d="M15 18l-6-6 6-6" />
         </svg>
       </button>
       <button
@@ -49,8 +62,15 @@
         @click="store.handleNextWallNext"
       >
         {{ store.isRoomClosedWithNewWall ? 'Завершить' : 'Далее' }}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
-          <path d="M9 18l6-6-6-6"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          width="20"
+          height="20"
+        >
+          <path d="M9 18l6-6-6-6" />
         </svg>
       </button>
     </div>
@@ -72,12 +92,15 @@ const svgContent = computed(() => svgStore.getSvgContent('next-wall'))
 const viewBox = computed(() => svgStore.getViewBox('next-wall'))
 
 // Обновляем SVG при изменении значения
-watch(() => store.inputs.nextWall, (newValue) => {
-  if (newValue && newValue !== '') {
-    const value = parseFloat(newValue)
-    svgStore.drawNextWallPreview(store.walls, store.corners, value)
+watch(
+  () => store.inputs.nextWall,
+  (newValue) => {
+    if (newValue && newValue !== '') {
+      const value = parseFloat(newValue)
+      svgStore.drawNextWallPreview(store.walls, store.corners, value)
+    }
   }
-})
+)
 
 // Инициализировать SVG при монтировании
 onMounted(() => {
@@ -105,8 +128,8 @@ onMounted(() => {
 
 .step-badge {
   align-self: flex-start;
-  background: #EFF6FF;
-  color: #2563EB;
+  background: #eff6ff;
+  color: #2563eb;
   padding: 4px 12px;
   border-radius: 100px;
   font-size: 12px;
@@ -130,8 +153,8 @@ onMounted(() => {
 }
 
 .instruction-box {
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  border: 2px solid #2563EB;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #2563eb;
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 20px;
@@ -147,14 +170,14 @@ onMounted(() => {
 .instruction-text {
   font-size: 15px;
   font-weight: 700;
-  color: #1E40AF;
+  color: #1e40af;
   line-height: 1.4;
   margin: 0;
 }
 
 .instruction-detail {
   font-size: 13px;
-  color: #3B82F6;
+  color: #3b82f6;
   line-height: 1.4;
   margin: 0;
 }
@@ -164,7 +187,7 @@ onMounted(() => {
   border-radius: 16px;
   padding: 12px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   flex: 1;
   min-height: 0;
   display: flex;
@@ -182,7 +205,7 @@ onMounted(() => {
   background: var(--surface);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   width: 100%;
   max-width: 100%;
   display: flex;
@@ -228,7 +251,7 @@ onMounted(() => {
 
 .error-message {
   font-size: 12px;
-  color: #EF4444;
+  color: #ef4444;
   text-align: center;
   padding: 10px;
   background: rgba(239, 68, 68, 0.1);
@@ -243,7 +266,7 @@ onMounted(() => {
   gap: 8px;
   margin-top: 8px;
   padding: 8px 10px;
-  background: #EFF6FF;
+  background: #eff6ff;
   border-radius: 10px;
 }
 
@@ -251,12 +274,12 @@ onMounted(() => {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  color: #2563EB;
+  color: #2563eb;
 }
 
 .tip-text {
   font-size: 13px;
-  color: #2563EB;
+  color: #2563eb;
   line-height: 1.3;
   font-weight: 500;
 }

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="preview-area"
     ref="previewContainer"
+    class="preview-area"
     @wheel.prevent="handleWheel"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
@@ -12,32 +12,53 @@
     @touchend="handleTouchEnd"
   >
     <div class="zoom-controls">
-      <button class="zoom-btn" @click="zoomIn" title="Увеличить">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-          <line x1="11" y1="8" x2="11" y2="14"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
+      <button class="zoom-btn" title="Увеличить" @click="zoomIn">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+          <line x1="11" y1="8" x2="11" y2="14" />
+          <line x1="8" y1="11" x2="14" y2="11" />
         </svg>
       </button>
       <span class="zoom-level">{{ Math.round(scale * 100) }}%</span>
-      <button class="zoom-btn" @click="zoomOut" title="Уменьшить">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-          <line x1="8" y1="11" x2="14" y2="11"/>
+      <button class="zoom-btn" title="Уменьшить" @click="zoomOut">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+          <line x1="8" y1="11" x2="14" y2="11" />
         </svg>
       </button>
-      <button class="zoom-btn" @click="resetZoom" title="Сбросить зум">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 4v6h6"/>
-          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+      <button class="zoom-btn" title="Сбросить зум" @click="resetZoom">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M1 4v6h6" />
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
         </svg>
       </button>
     </div>
     <div
       class="svg-container"
-      :class="{ 'dragging': isDragging, 'grabbable': scale > 1 }"
+      :class="{ dragging: isDragging, grabbable: scale > 1 }"
       :style="containerStyle"
     >
       <SVGRenderer
@@ -64,7 +85,7 @@ defineProps({
   }
 })
 
-defineEmits(['corner-click'])
+const emit = defineEmits(['corner-click'])
 
 const scale = ref(1)
 const previewContainer = ref(null)
@@ -127,9 +148,11 @@ const handleWheel = (event) => {
 // Mouse drag handlers
 const handleMouseDown = (event) => {
   // Не запускать drag если кликнули на угол или на кнопки зума
-  if (scale.value > 1 &&
-      !event.target.closest('.zoom-controls') &&
-      !event.target.classList.contains('corner-point')) {
+  if (
+    scale.value > 1 &&
+    !event.target.closest('.zoom-controls') &&
+    !event.target.classList.contains('corner-point')
+  ) {
     isDragging.value = true
     startX.value = event.clientX - offsetX.value
     startY.value = event.clientY - offsetY.value
@@ -163,22 +186,22 @@ const handleTouchStart = (event) => {
     const touch = event.touches[0]
     const now = Date.now()
     const timeSinceLastTouch = now - lastTouchTime
-    const distance = lastTouchPoint 
+    const distance = lastTouchPoint
       ? Math.sqrt(
-          Math.pow(touch.clientX - lastTouchPoint.x, 2) + 
-          Math.pow(touch.clientY - lastTouchPoint.y, 2)
+          Math.pow(touch.clientX - lastTouchPoint.x, 2) +
+            Math.pow(touch.clientY - lastTouchPoint.y, 2)
         )
       : 0
-    
+
     // Если двойной тап в том же месте - предотвращаем зум
     if (timeSinceLastTouch < 300 && distance < 10) {
       event.preventDefault()
     }
-    
+
     lastTouchTime = now
     lastTouchPoint = { x: touch.clientX, y: touch.clientY }
   }
-  
+
   if (event.touches.length === 2) {
     // Pinch-to-zoom gesture
     const touch1 = event.touches[0]
@@ -224,13 +247,13 @@ const handleTouchEnd = (event) => {
   if (event.changedTouches && event.changedTouches.length > 0 && !isDragging.value) {
     const touchDuration = Date.now() - touchStartTime
     const touch = event.changedTouches[0]
-    const distance = touchStartPoint 
+    const distance = touchStartPoint
       ? Math.sqrt(
-          Math.pow(touch.clientX - touchStartPoint.x, 2) + 
-          Math.pow(touch.clientY - touchStartPoint.y, 2)
+          Math.pow(touch.clientX - touchStartPoint.x, 2) +
+            Math.pow(touch.clientY - touchStartPoint.y, 2)
         )
       : 0
-    
+
     // Если короткий тап без движения - это клик (только если не был зум)
     if (touchDuration < 300 && distance < 10 && scale.value <= 1) {
       setTimeout(() => {
@@ -245,7 +268,7 @@ const handleTouchEnd = (event) => {
       }, 10)
     }
   }
-  
+
   isDragging.value = false
   initialDistance.value = 0
 }
@@ -367,8 +390,13 @@ const getDistance = (touch1, touch2) => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 :deep(.room-label) {

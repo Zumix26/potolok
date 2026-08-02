@@ -1,6 +1,7 @@
 <template>
   <div class="step-header">
     <div class="step-icon">
+      <!-- eslint-disable-next-line vue/no-v-html -- icon is a hardcoded SVG string prop, never user text -->
       <div v-html="icon" />
     </div>
     <h2 class="step-title">{{ title }}</h2>

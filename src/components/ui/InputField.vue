@@ -6,11 +6,11 @@
         class="input-field"
         :class="{ error: hasError }"
         :value="modelValue"
-        @input="$emit('update:modelValue', $event.target.value)"
         :placeholder="placeholder"
         :min="min"
         :max="max"
-      >
+        @input="$emit('update:modelValue', $event.target.value)"
+      />
       <div class="input-unit">{{ unit }}</div>
       <div class="input-hint">{{ hint }}</div>
     </div>
@@ -87,9 +87,16 @@ defineEmits(['update:modelValue'])
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  75% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
 }
 
 .input-unit {

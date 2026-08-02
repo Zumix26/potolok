@@ -1,28 +1,28 @@
 <template>
   <div class="header">
-    <button 
-      class="back-btn" 
-      :disabled="!canGoBack" 
-      @click="$emit('back')"
+    <button
+      class="back-btn"
+      :disabled="!canGoBack"
       aria-label="Назад"
       title="Вернуться к предыдущему шагу"
+      @click="$emit('back')"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
+        <path d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
     </button>
     <div class="header-title">
       <span class="title-icon">🏠</span>
       <span>{{ title }}</span>
     </div>
-    <button 
-      class="close-btn" 
-      @click="$emit('close')"
+    <button
+      class="close-btn"
       aria-label="Закрыть"
       title="Закрыть приложение"
+      @click="$emit('close')"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 6 6 18M6 6l12 12"/>
+        <path d="M18 6 6 18M6 6l12 12" />
       </svg>
     </button>
   </div>
@@ -54,7 +54,8 @@ defineEmits(['back', 'close'])
   box-shadow: var(--shadow-sm);
 }
 
-.back-btn, .close-btn {
+.back-btn,
+.close-btn {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
@@ -68,14 +69,16 @@ defineEmits(['back', 'close'])
   transition: all 0.2s ease;
 }
 
-.back-btn:hover:not(:disabled), .close-btn:hover {
+.back-btn:hover:not(:disabled),
+.close-btn:hover {
   border-color: var(--primary);
   color: var(--primary);
   background: var(--primary-light);
   transform: scale(1.05);
 }
 
-.back-btn:active:not(:disabled), .close-btn:active {
+.back-btn:active:not(:disabled),
+.close-btn:active {
   transform: scale(0.95);
 }
 
@@ -85,7 +88,8 @@ defineEmits(['back', 'close'])
   background: var(--border-light);
 }
 
-.back-btn svg, .close-btn svg {
+.back-btn svg,
+.close-btn svg {
   width: 20px;
   height: 20px;
 }

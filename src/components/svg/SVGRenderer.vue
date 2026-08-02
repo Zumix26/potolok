@@ -1,13 +1,15 @@
 <template>
+  <!-- eslint-disable vue/no-v-html -- content is SVG markup built from numeric measurements in svgRenderer store, never user text -->
   <svg
     ref="svgElement"
     class="preview-svg"
     :viewBox="viewBox"
-    v-html="content"
     @click="handleClick"
     @mousedown="handleMouseDown"
     @touchstart="handleTouchStart"
+    v-html="content"
   />
+  <!-- eslint-enable vue/no-v-html -->
 </template>
 
 <script setup>
@@ -37,7 +39,7 @@ const handleClick = (event) => {
     isDragging = false
     return
   }
-  
+
   const target = event.target
 
   // Проверяем, кликнули ли на угол
@@ -57,13 +59,13 @@ const startDrag = (clientX, clientY, target) => {
   point.x = clientX
   point.y = clientY
   const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse())
-  
+
   // Получаем текущую позицию из transform
   const transform = target.getAttribute('transform')
   const match = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
   const currentX = match ? parseFloat(match[1]) : 0
   const currentY = match ? parseFloat(match[2]) : 0
-  
+
   startX = svgPoint.x - currentX
   startY = svgPoint.y - currentY
 
@@ -76,26 +78,26 @@ const handleMouseDown = (event) => {
   if (!target.classList.contains('fixture-item')) {
     target = target.closest('.fixture-item')
   }
-  
+
   if (!target || target.tagName !== 'g') return
 
   startDrag(event.clientX, event.clientY, target)
 
   const handleMouseMove = (e) => {
     if (!isDragging || !draggedElement) return
-    
+
     const svg = svgElement.value
     const point = svg.createSVGPoint()
     point.x = e.clientX
     point.y = e.clientY
     const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse())
-    
+
     const newX = svgPoint.x - startX
     const newY = svgPoint.y - startY
-    
+
     // Обновляем transform группы
     draggedElement.setAttribute('transform', `translate(${newX}, ${newY})`)
-    
+
     const type = draggedElement.dataset.type
     const id = parseInt(draggedElement.dataset.id)
     emit('fixture-drag', type, id, newX, newY)
@@ -116,13 +118,13 @@ const handleMouseDown = (event) => {
 const handleTouchStart = (event) => {
   // Если два пальца - это pinch zoom, пропускаем
   if (event.touches.length > 1) return
-  
+
   // Проверяем, кликнули ли на элемент или на его дочерний элемент
   let target = event.target
   if (!target.classList.contains('fixture-item')) {
     target = target.closest('.fixture-item')
   }
-  
+
   if (!target || target.tagName !== 'g') return
 
   const touch = event.touches[0]
@@ -130,24 +132,24 @@ const handleTouchStart = (event) => {
 
   const handleTouchMove = (e) => {
     if (!isDragging || !draggedElement || e.touches.length !== 1) return
-    
+
     const touch = e.touches[0]
     const svg = svgElement.value
     const point = svg.createSVGPoint()
     point.x = touch.clientX
     point.y = touch.clientY
     const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse())
-    
+
     const newX = svgPoint.x - startX
     const newY = svgPoint.y - startY
-    
+
     // Обновляем transform группы
     draggedElement.setAttribute('transform', `translate(${newX}, ${newY})`)
-    
+
     const type = draggedElement.dataset.type
     const id = parseInt(draggedElement.dataset.id)
     emit('fixture-drag', type, id, newX, newY)
-    
+
     e.preventDefault()
   }
 
@@ -164,11 +166,14 @@ const handleTouchStart = (event) => {
 }
 
 // Обновить обработчики при изменении content
-watch(() => props.content, () => {
-  nextTick(() => {
-    // Обработчики будут работать через делегирование событий
-  })
-})
+watch(
+  () => props.content,
+  () => {
+    nextTick(() => {
+      // Обработчики будут работать через делегирование событий
+    })
+  }
+)
 </script>
 
 <style scoped>

@@ -1,38 +1,53 @@
 <template>
   <div class="digit-picker">
-    <div class="digit-scroll" ref="hundreds" @scroll="handleScroll" @wheel.prevent="(e) => handleWheel(e, 'hundreds')">
+    <div
+      ref="hundreds"
+      class="digit-scroll"
+      @scroll="handleScroll"
+      @wheel.prevent="(e) => handleWheel(e, 'hundreds')"
+    >
       <div class="digit-spacer"></div>
       <div
         v-for="digit in 10"
         :key="'h' + (digit - 1)"
         class="digit-item"
-        :class="{ active: (digit - 1) === currentHundreds }"
+        :class="{ active: digit - 1 === currentHundreds }"
       >
         {{ digit - 1 }}
       </div>
       <div class="digit-spacer"></div>
     </div>
 
-    <div class="digit-scroll" ref="tens" @scroll="handleScroll" @wheel.prevent="(e) => handleWheel(e, 'tens')">
+    <div
+      ref="tens"
+      class="digit-scroll"
+      @scroll="handleScroll"
+      @wheel.prevent="(e) => handleWheel(e, 'tens')"
+    >
       <div class="digit-spacer"></div>
       <div
         v-for="digit in 10"
         :key="'t' + (digit - 1)"
         class="digit-item"
-        :class="{ active: (digit - 1) === currentTens }"
+        :class="{ active: digit - 1 === currentTens }"
       >
         {{ digit - 1 }}
       </div>
       <div class="digit-spacer"></div>
     </div>
 
-    <div class="digit-scroll" ref="ones" @scroll="handleScroll" @wheel.prevent="(e) => handleWheel(e, 'ones')">
+    <div
+      ref="ones"
+      class="digit-scroll"
+      @scroll="handleScroll"
+      @wheel.prevent="(e) => handleWheel(e, 'ones')"
+    >
       <div class="digit-spacer"></div>
       <div
         v-for="digit in 10"
         :key="'o' + (digit - 1)"
         class="digit-item"
-        :class="{ active: (digit - 1) === currentOnes }"
+        :class="{ active: digit - 1 === currentOnes }"
       >
         {{ digit - 1 }}
       </div>
@@ -81,9 +96,7 @@ const hasUserInteracted = ref(false)
 const ITEM_HEIGHT = 50
 
 const currentValue = computed(() => {
-  return currentHundreds.value * 100 +
-         currentTens.value * 10 +
-         currentOnes.value
+  return currentHundreds.value * 100 + currentTens.value * 10 + currentOnes.value
 })
 
 const handleWheel = (event, type) => {
@@ -96,9 +109,9 @@ const handleWheel = (event, type) => {
   }
 
   event.preventDefault()
-  
+
   const direction = event.deltaY > 0 ? 1 : -1
-  
+
   if (type === 'hundreds') {
     const newValue = Math.max(0, Math.min(9, currentHundreds.value + direction))
     currentHundreds.value = newValue
@@ -207,19 +220,22 @@ const setValueFromProps = (value) => {
   currentOnes.value = numValue % 10
 }
 
-watch(() => props.modelValue, (newValue) => {
-  // Игнорируем обновления из props до взаимодействия пользователя
-  if (!hasUserInteracted.value) return
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    // Игнорируем обновления из props до взаимодействия пользователя
+    if (!hasUserInteracted.value) return
 
-  if (newValue && parseInt(newValue) !== currentValue.value) {
-    setValueFromProps(newValue)
-    nextTick(() => {
-      if (hundreds.value) hundreds.value.scrollTop = currentHundreds.value * ITEM_HEIGHT
-      if (tens.value) tens.value.scrollTop = currentTens.value * ITEM_HEIGHT
-      if (ones.value) ones.value.scrollTop = currentOnes.value * ITEM_HEIGHT
-    })
+    if (newValue && parseInt(newValue) !== currentValue.value) {
+      setValueFromProps(newValue)
+      nextTick(() => {
+        if (hundreds.value) hundreds.value.scrollTop = currentHundreds.value * ITEM_HEIGHT
+        if (tens.value) tens.value.scrollTop = currentTens.value * ITEM_HEIGHT
+        if (ones.value) ones.value.scrollTop = currentOnes.value * ITEM_HEIGHT
+      })
+    }
   }
-})
+)
 
 onMounted(() => {
   nextTick(() => {
@@ -296,7 +312,7 @@ onMounted(() => {
   justify-content: center;
   font-size: 32px;
   font-weight: 800;
-  color: #CBD5E1;
+  color: #cbd5e1;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   scroll-snap-align: center;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
@@ -317,9 +333,10 @@ onMounted(() => {
   right: 0;
   height: 50px;
   transform: translateY(-50%);
-  border-top: 3px solid #2563EB;
-  border-bottom: 3px solid #2563EB;
-  background: linear-gradient(to bottom,
+  border-top: 3px solid #2563eb;
+  border-bottom: 3px solid #2563eb;
+  background: linear-gradient(
+    to bottom,
     rgba(37, 99, 235, 0.08),
     rgba(37, 99, 235, 0.12),
     rgba(37, 99, 235, 0.08)
@@ -341,19 +358,11 @@ onMounted(() => {
 
 .picker-overlay.top {
   top: 0;
-  background: linear-gradient(to bottom,
-    var(--surface) 0%,
-    var(--surface) 40%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom, var(--surface) 0%, var(--surface) 40%, transparent 100%);
 }
 
 .picker-overlay.bottom {
   bottom: 0;
-  background: linear-gradient(to top,
-    var(--surface) 0%,
-    var(--surface) 40%,
-    transparent 100%
-  );
+  background: linear-gradient(to top, var(--surface) 0%, var(--surface) 40%, transparent 100%);
 }
 </style>

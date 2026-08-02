@@ -1,10 +1,7 @@
 <template>
-  <div
-    class="corner-option"
-    :class="{ selected: isSelected }"
-    @click="$emit('select')"
-  >
+  <div class="corner-option" :class="{ selected: isSelected }" @click="$emit('select')">
     <div class="corner-visual">
+      <!-- eslint-disable-next-line vue/no-v-html -- svgContent is a hardcoded icon string from the parent, never user text -->
       <div v-html="svgContent" />
     </div>
     <div class="corner-title">{{ title }}</div>

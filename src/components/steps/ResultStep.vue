@@ -7,7 +7,7 @@
     />
 
     <div class="preview-wrapper">
-      <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
+      <PreviewArea :svg-content="svgContent" :viewBox="viewBox" />
     </div>
 
     <div class="result-grid">
@@ -32,13 +32,10 @@
         <span>Добавленные диагонали ({{ store.diagonals.length }})</span>
       </div>
       <div class="diagonals-list">
-        <div
-          v-for="(diagonal, index) in store.diagonals"
-          :key="index"
-          class="diagonal-item"
-        >
+        <div v-for="(diagonal, index) in store.diagonals" :key="index" class="diagonal-item">
           <span class="diagonal-label">
-            {{ String.fromCharCode(65 + diagonal.from) }} → {{ String.fromCharCode(65 + diagonal.to) }}
+            {{ String.fromCharCode(65 + diagonal.from) }} →
+            {{ String.fromCharCode(65 + diagonal.to) }}
           </span>
           <span class="diagonal-length">{{ diagonal.length }} см</span>
         </div>
@@ -47,15 +44,8 @@
   </div>
 
   <ActionButtons>
-    <SecondaryButton
-      label="Новый замер"
-      @click="store.restartApp"
-    />
-    <PrimaryButton
-      label="Поделиться"
-      :icon="shareIcon"
-      @click="store.shareResults"
-    />
+    <SecondaryButton label="Новый замер" @click="store.restartApp" />
+    <PrimaryButton label="Поделиться" :icon="shareIcon" @click="store.shareResults" />
   </ActionButtons>
 </template>
 

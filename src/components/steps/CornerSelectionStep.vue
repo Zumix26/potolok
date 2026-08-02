@@ -1,11 +1,14 @@
 <template>
   <div class="corner-selection-step">
     <h1 class="title">Какой угол?</h1>
-    
+
     <div class="instruction-box">
       <div class="instruction-content">
         <p class="instruction-text">Посмотрите на правый угол стены</p>
-        <p class="instruction-detail">Определите, куда уходит следующая стена: <strong>на вас</strong> (внутрь комнаты — внутренний угол) или <strong>от вас</strong> (выступает наружу — внешний угол)</p>
+        <p class="instruction-detail">
+          Определите, куда уходит следующая стена: <strong>на вас</strong> (внутрь комнаты —
+          внутренний угол) или <strong>от вас</strong> (выступает наружу — внешний угол)
+        </p>
       </div>
     </div>
 
@@ -19,16 +22,40 @@
         <div class="corner-visual">
           <svg viewBox="0 0 160 120" width="180" height="140">
             <defs>
-              <marker id="arrow-inner" markerWidth="3" markerHeight="2.5" refX="1.5" refY="1.25" orient="auto">
-                <polygon points="0 0, 3 1.25, 0 2.5" fill="#2563EB"/>
+              <marker
+                id="arrow-inner"
+                markerWidth="3"
+                markerHeight="2.5"
+                refX="1.5"
+                refY="1.25"
+                orient="auto"
+              >
+                <polygon points="0 0, 3 1.25, 0 2.5" fill="#2563EB" />
               </marker>
             </defs>
             <!-- Первая стена (горизонтальная) -->
-            <line x1="20" y1="60" x2="60" y2="60" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
+            <line
+              x1="20"
+              y1="60"
+              x2="60"
+              y2="60"
+              stroke="#2563EB"
+              stroke-width="8"
+              stroke-linecap="round"
+            />
             <!-- Вторая стена (вертикальная, идет на человека вниз) со стрелкой на конце -->
-            <line x1="60" y1="60" x2="60" y2="110" stroke="#2563EB" stroke-width="8" marker-end="url(#arrow-inner)" stroke-linecap="round"/>
+            <line
+              x1="60"
+              y1="60"
+              x2="60"
+              y2="110"
+              stroke="#2563EB"
+              stroke-width="8"
+              marker-end="url(#arrow-inner)"
+              stroke-linecap="round"
+            />
             <!-- Человечек стоит слева, смотрит направо на угол (как на других шагах) -->
-            <circle cx="20" cy="95" r="12" fill="#2563EB"/>
+            <circle cx="20" cy="95" r="12" fill="#2563EB" />
             <text x="20" y="101" text-anchor="middle" font-size="14" fill="white">👤</text>
           </svg>
         </div>
@@ -46,16 +73,40 @@
         <div class="corner-visual">
           <svg viewBox="0 0 160 120" width="180" height="140">
             <defs>
-              <marker id="arrow-outer" markerWidth="3" markerHeight="2.5" refX="1.5" refY="1.25" orient="auto">
-                <polygon points="0 0, 3 1.25, 0 2.5" fill="#2563EB"/>
+              <marker
+                id="arrow-outer"
+                markerWidth="3"
+                markerHeight="2.5"
+                refX="1.5"
+                refY="1.25"
+                orient="auto"
+              >
+                <polygon points="0 0, 3 1.25, 0 2.5" fill="#2563EB" />
               </marker>
             </defs>
             <!-- Первая стена (горизонтальная) -->
-            <line x1="20" y1="60" x2="60" y2="60" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
+            <line
+              x1="20"
+              y1="60"
+              x2="60"
+              y2="60"
+              stroke="#2563EB"
+              stroke-width="8"
+              stroke-linecap="round"
+            />
             <!-- Вторая стена (вертикальная, уходит от человека вверх) со стрелкой на конце -->
-            <line x1="60" y1="60" x2="60" y2="10" stroke="#2563EB" stroke-width="8" marker-end="url(#arrow-outer)" stroke-linecap="round"/>
+            <line
+              x1="60"
+              y1="60"
+              x2="60"
+              y2="10"
+              stroke="#2563EB"
+              stroke-width="8"
+              marker-end="url(#arrow-outer)"
+              stroke-linecap="round"
+            />
             <!-- Человечек стоит слева, смотрит направо на угол (как на других шагах) -->
-            <circle cx="20" cy="95" r="12" fill="#2563EB"/>
+            <circle cx="20" cy="95" r="12" fill="#2563EB" />
             <text x="20" y="101" text-anchor="middle" font-size="14" fill="white">👤</text>
           </svg>
         </div>
@@ -66,13 +117,16 @@
     </div>
 
     <div class="footer-actions">
-      <button
-        v-if="store.canGoBack"
-        class="back-btn"
-        @click="store.handleBack"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
-          <path d="M15 18l-6-6 6-6"/>
+      <button v-if="store.canGoBack" class="back-btn" @click="store.handleBack">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          width="20"
+          height="20"
+        >
+          <path d="M15 18l-6-6 6-6" />
         </svg>
       </button>
     </div>
@@ -80,7 +134,6 @@
 </template>
 
 <script setup>
-import { nextTick } from 'vue'
 import { useRoomMeasurementStore } from '../../stores'
 
 const store = useRoomMeasurementStore()
@@ -108,8 +161,8 @@ const handleCornerClick = (type) => {
 
 .step-badge {
   align-self: flex-start;
-  background: #EFF6FF;
-  color: #2563EB;
+  background: #eff6ff;
+  color: #2563eb;
   padding: 4px 12px;
   border-radius: 100px;
   font-size: 12px;
@@ -135,8 +188,8 @@ const handleCornerClick = (type) => {
 }
 
 .instruction-box {
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  border: 2px solid #2563EB;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #2563eb;
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 20px;
@@ -152,14 +205,14 @@ const handleCornerClick = (type) => {
 .instruction-text {
   font-size: 15px;
   font-weight: 700;
-  color: #1E40AF;
+  color: #1e40af;
   line-height: 1.4;
   margin: 0;
 }
 
 .instruction-detail {
   font-size: 13px;
-  color: #3B82F6;
+  color: #3b82f6;
   line-height: 1.4;
   margin: 0;
 }
@@ -178,7 +231,7 @@ const handleCornerClick = (type) => {
   background: var(--surface);
   border-radius: 24px;
   padding: 32px 24px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 4px solid transparent;
@@ -214,7 +267,7 @@ const handleCornerClick = (type) => {
 
 .corner-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .corner-card:active {
@@ -222,8 +275,8 @@ const handleCornerClick = (type) => {
 }
 
 .corner-card.active {
-  border-color: #2563EB;
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
 }
 
@@ -247,7 +300,6 @@ const handleCornerClick = (type) => {
   color: var(--text);
   letter-spacing: -0.5px;
 }
-
 
 .footer-actions {
   margin-top: 8px;

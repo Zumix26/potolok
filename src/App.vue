@@ -1,33 +1,29 @@
 <template>
   <div>
-    <ProgressBar
-      :progress="progress"
-      :currentStep="stepIndex"
-      :totalSteps="totalSteps"
-    />
+    <ProgressBar :progress="progress" :current-step="stepIndex" :total-steps="totalSteps" />
 
     <div class="main-container">
-      <StepContainer :isActive="currentStep === 'first-wall'">
+      <StepContainer :is-active="currentStep === 'first-wall'">
         <FirstWallStep />
       </StepContainer>
 
-      <StepContainer :isActive="currentStep === 'corner-selection'">
+      <StepContainer :is-active="currentStep === 'corner-selection'">
         <CornerSelectionStep />
       </StepContainer>
 
-      <StepContainer :isActive="currentStep === 'next-wall'">
+      <StepContainer :is-active="currentStep === 'next-wall'">
         <NextWallStep />
       </StepContainer>
 
-      <StepContainer :isActive="currentStep === 'diagonal'">
+      <StepContainer :is-active="currentStep === 'diagonal'">
         <DiagonalStep />
       </StepContainer>
 
-      <StepContainer :isActive="currentStep === 'fixtures'">
+      <StepContainer :is-active="currentStep === 'fixtures'">
         <FixturesStep />
       </StepContainer>
 
-      <StepContainer :isActive="currentStep === 'result'">
+      <StepContainer :is-active="currentStep === 'result'">
         <ResultStep />
       </StepContainer>
     </div>
@@ -55,7 +51,9 @@ const { currentStep, stepIndex, totalSteps, progress } = storeToRefs(store)
 onMounted(() => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      const activeButton = document.querySelector('.step-container.active .btn.primary:not(:disabled)')
+      const activeButton = document.querySelector(
+        '.step-container.active .btn.primary:not(:disabled)'
+      )
       if (activeButton) activeButton.click()
     }
   })
@@ -65,11 +63,11 @@ onMounted(() => {
     const vh = window.innerHeight * 0.01
     document.documentElement.style.setProperty('--vh', `${vh}px`)
   }
-  
+
   setViewportHeight()
   window.addEventListener('resize', setViewportHeight)
   window.addEventListener('orientationchange', setViewportHeight)
-  
+
   // Для iOS Safari - обновляем при скролле (когда адресная строка скрывается/появляется)
   let lastHeight = window.innerHeight
   const checkHeight = () => {
@@ -79,7 +77,7 @@ onMounted(() => {
       lastHeight = currentHeight
     }
   }
-  
+
   window.addEventListener('scroll', checkHeight)
   window.addEventListener('resize', checkHeight)
 })

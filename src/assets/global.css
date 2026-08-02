@@ -1,97 +1,110 @@
 :root {
-    --primary: #0066FF;
-    --primary-dark: #0052CC;
-    --primary-light: #E6F2FF;
-    --success: #00B341;
-    --success-light: #E6F7ED;
-    --warning: #FF8C00;
-    --warning-light: #FFF4E6;
-    --error: #FF3B30;
-    --error-light: #FFEBEA;
+  --primary: #0066ff;
+  --primary-dark: #0052cc;
+  --primary-light: #e6f2ff;
+  --success: #00b341;
+  --success-light: #e6f7ed;
+  --warning: #ff8c00;
+  --warning-light: #fff4e6;
+  --error: #ff3b30;
+  --error-light: #ffebea;
 
-    --bg: #FAFBFC;
-    --surface: #FFFFFF;
-    --surface-elevated: #FFFFFF;
-    --border: #E1E5E9;
-    --border-light: #F0F2F5;
+  --bg: #fafbfc;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border: #e1e5e9;
+  --border-light: #f0f2f5;
 
-    --text: #1D2129;
-    --text-secondary: #606770;
-    --text-tertiary: #8A919A;
+  --text: #1d2129;
+  --text-secondary: #606770;
+  --text-tertiary: #8a919a;
 
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-    --shadow-xl: 0 16px 40px rgba(0,0,0,0.16);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.16);
 
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 :root {
-    --vh: 1vh;
+  --vh: 1vh;
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    min-height: 100svh;
-    max-width: 480px;
-    margin: 0 auto;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    overflow-x: hidden;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    /* Предотвращаем скролл на мобильных */
-    overflow-y: hidden;
-    height: 100vh;
-    height: 100svh;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100svh;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Предотвращаем скролл на мобильных */
+  overflow-y: hidden;
+  height: 100vh;
+  height: 100svh;
 }
 
 /* Улучшенная прокрутка */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg);
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
+  background: var(--border);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
+  background: var(--text-tertiary);
 }
 
 /* Улучшенный фокус для доступности */
 *:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-    border-radius: var(--radius-sm);
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* Плавные переходы для интерактивных элементов */
-button, input, select, textarea {
-    transition: all 0.2s ease;
+button,
+input,
+select,
+textarea {
+  transition: all 0.2s ease;
 }
 
 /* Улучшенная читаемость текста */
-p, span, div {
-    line-height: 1.6;
+p,
+span,
+div {
+  line-height: 1.6;
 }
