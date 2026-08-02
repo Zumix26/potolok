@@ -20,7 +20,8 @@ defineProps({
   display: none;
   flex-direction: column;
   flex: 1;
-  padding: 0 20px 20px;
+  padding: 0 20px 0;
+  min-height: 0;
 }
 
 .step-container.active {

@@ -1,63 +1,68 @@
 <template>
   <div class="corner-selection-step">
-    <div class="step-badge">Шаг 2</div>
-
     <h1 class="title">Какой угол?</h1>
-    <p class="subtitle">Выберите тип угла справа от первой стены</p>
+    
+    <div class="instruction-box">
+      <div class="instruction-content">
+        <p class="instruction-text">Посмотрите на правый угол стены</p>
+        <p class="instruction-detail">Определите, куда уходит следующая стена: <strong>на вас</strong> (внутрь комнаты — внутренний угол) или <strong>от вас</strong> (выступает наружу — внешний угол)</p>
+      </div>
+    </div>
 
     <div class="corner-options">
       <!-- Внутренний угол -->
-      <div
+      <button
         class="corner-card"
         :class="{ active: store.selectedCorner === 'inner' }"
-        @click="store.handleCornerSelection('inner')"
+        @click="handleCornerClick('inner')"
       >
         <div class="corner-visual">
-          <svg viewBox="0 0 120 120" width="120" height="120">
-            <!-- Две стены образующие внутренний угол (90°) -->
-            <line x1="20" y1="60" x2="60" y2="60" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
-            <line x1="60" y1="60" x2="60" y2="100" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
-            <!-- Угловая точка -->
-            <circle cx="60" cy="60" r="8" fill="#2563EB"/>
-            <!-- Дуга угла -->
-            <path d="M 75 60 A 15 15 0 0 1 60 75" stroke="#10B981" stroke-width="3" fill="none"/>
-            <!-- Текст 90° -->
-            <text x="80" y="80" font-size="16" font-weight="700" fill="#10B981">90°</text>
+          <svg viewBox="0 0 160 120" width="180" height="140">
+            <defs>
+              <marker id="arrow-inner" markerWidth="3" markerHeight="2.5" refX="1.5" refY="1.25" orient="auto">
+                <polygon points="0 0, 3 1.25, 0 2.5" fill="#2563EB"/>
+              </marker>
+            </defs>
+            <!-- Первая стена (горизонтальная) -->
+            <line x1="20" y1="60" x2="60" y2="60" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
+            <!-- Вторая стена (вертикальная, идет на человека вниз) со стрелкой на конце -->
+            <line x1="60" y1="60" x2="60" y2="110" stroke="#2563EB" stroke-width="8" marker-end="url(#arrow-inner)" stroke-linecap="round"/>
+            <!-- Человечек стоит слева, смотрит направо на угол (как на других шагах) -->
+            <circle cx="20" cy="95" r="12" fill="#2563EB"/>
+            <text x="20" y="101" text-anchor="middle" font-size="14" fill="white">👤</text>
           </svg>
         </div>
         <div class="corner-info">
-          <div class="corner-title">Внутренний угол</div>
-          <div class="corner-description">Обычный угол комнаты (как в углу между двумя стенами)</div>
+          <div class="corner-title">Стена идет на меня</div>
         </div>
-      </div>
+      </button>
 
       <!-- Внешний угол -->
-      <div
+      <button
         class="corner-card"
         :class="{ active: store.selectedCorner === 'outer' }"
-        @click="store.handleCornerSelection('outer')"
+        @click="handleCornerClick('outer')"
       >
         <div class="corner-visual">
-          <svg viewBox="0 0 120 120" width="120" height="120">
-            <!-- Две стены образующие внешний угол (270°) -->
-            <line x1="20" y1="60" x2="60" y2="60" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
-            <line x1="60" y1="60" x2="60" y2="20" stroke="#2563EB" stroke-width="6" stroke-linecap="round"/>
-            <!-- Угловая точка -->
-            <circle cx="60" cy="60" r="8" fill="#2563EB"/>
-            <!-- Дуга угла (внешняя) -->
-            <path d="M 60 75 A 15 15 0 0 0 75 60" stroke="#F59E0B" stroke-width="3" fill="none"/>
-            <path d="M 75 60 A 15 15 0 0 0 60 45" stroke="#F59E0B" stroke-width="3" fill="none"/>
-            <path d="M 60 45 A 15 15 0 0 0 45 60" stroke="#F59E0B" stroke-width="3" fill="none"/>
-            <path d="M 45 60 A 15 15 0 0 0 60 75" stroke="#F59E0B" stroke-width="3" fill="none"/>
-            <!-- Текст 270° -->
-            <text x="35" y="95" font-size="16" font-weight="700" fill="#F59E0B">270°</text>
+          <svg viewBox="0 0 160 120" width="180" height="140">
+            <defs>
+              <marker id="arrow-outer" markerWidth="3" markerHeight="2.5" refX="1.5" refY="1.25" orient="auto">
+                <polygon points="0 0, 3 1.25, 0 2.5" fill="#2563EB"/>
+              </marker>
+            </defs>
+            <!-- Первая стена (горизонтальная) -->
+            <line x1="20" y1="60" x2="60" y2="60" stroke="#2563EB" stroke-width="8" stroke-linecap="round"/>
+            <!-- Вторая стена (вертикальная, уходит от человека вверх) со стрелкой на конце -->
+            <line x1="60" y1="60" x2="60" y2="10" stroke="#2563EB" stroke-width="8" marker-end="url(#arrow-outer)" stroke-linecap="round"/>
+            <!-- Человечек стоит слева, смотрит направо на угол (как на других шагах) -->
+            <circle cx="20" cy="95" r="12" fill="#2563EB"/>
+            <text x="20" y="101" text-anchor="middle" font-size="14" fill="white">👤</text>
           </svg>
         </div>
         <div class="corner-info">
-          <div class="corner-title">Внешний угол</div>
-          <div class="corner-description">Выступающий угол (как угол колонны или выступа)</div>
+          <div class="corner-title">Стена уходит от меня</div>
         </div>
-      </div>
+      </button>
     </div>
 
     <div class="footer-actions">
@@ -70,30 +75,22 @@
           <path d="M15 18l-6-6 6-6"/>
         </svg>
       </button>
-      <button
-        class="next-btn"
-        :class="{ active: store.selectedCorner }"
-        :disabled="!store.selectedCorner"
-        @click="handleNext"
-      >
-        Далее
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
-          <path d="M9 18l6-6-6-6"/>
-        </svg>
-      </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { nextTick } from 'vue'
 import { useRoomMeasurementStore } from '../../stores'
 
 const store = useRoomMeasurementStore()
 
-const handleNext = () => {
-  if (store.selectedCorner) {
-    store.handleCornerNext()
-  }
+const handleCornerClick = (type) => {
+  // Устанавливаем выбранный угол
+  store.selectedCorner = type
+  store.handleCornerSelection(type)
+  // Автоматически переходим дальше после выбора угла
+  store.handleCornerNext()
 }
 </script>
 
@@ -102,10 +99,11 @@ const handleNext = () => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 12px 16px;
+  padding: 16px;
   gap: 0;
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
 }
 
 .step-badge {
@@ -116,85 +114,151 @@ const handleNext = () => {
   border-radius: 100px;
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1.2;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   color: var(--text);
+  text-align: center;
 }
 
 .subtitle {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-secondary);
-  margin-bottom: 12px;
-  line-height: 1.3;
+  margin-bottom: 24px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.instruction-box {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border: 2px solid #2563EB;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.instruction-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instruction-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1E40AF;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.instruction-detail {
+  font-size: 13px;
+  color: #3B82F6;
+  line-height: 1.4;
+  margin: 0;
 }
 
 .corner-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+  padding: 0 8px;
 }
 
 .corner-card {
   background: var(--surface);
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-radius: 24px;
+  padding: 32px 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
   cursor: pointer;
-  transition: all 0.2s;
-  border: 3px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 4px solid transparent;
   display: flex;
-  gap: 14px;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 20px;
   flex-shrink: 0;
+  min-height: 200px;
+  width: 100%;
+  font-family: inherit;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.corner-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.corner-card.active::before {
+  opacity: 1;
+}
+
+.corner-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 .corner-card:active {
-  transform: scale(0.98);
+  transform: translateY(-2px) scale(0.98);
 }
 
 .corner-card.active {
   border-color: #2563EB;
-  background: #EFF6FF;
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
 }
 
 .corner-visual {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .corner-info {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 .corner-title {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 800;
-  margin-bottom: 4px;
   color: var(--text);
+  letter-spacing: -0.5px;
 }
 
-.corner-description {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.3;
-}
 
 .footer-actions {
-  margin-top: auto;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
   flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
   background: var(--bg);
-  padding-bottom: 12px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
   display: flex;
   gap: 10px;
+  position: relative;
+  z-index: 10;
 }
 
 .back-btn {
@@ -245,32 +309,56 @@ const handleNext = () => {
   transform: scale(0.98);
 }
 
-@media (max-width: 380px) {
+@media (max-width: 768px) {
   .corner-selection-step {
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
 
   .title {
     font-size: 22px;
+    margin-bottom: 6px;
   }
 
-  .subtitle {
+  .instruction-box {
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+
+  .instruction-text {
     font-size: 13px;
   }
 
+  .instruction-detail {
+    font-size: 11px;
+  }
+
+  .corner-options {
+    gap: 12px;
+  }
+
   .corner-card {
-    flex-direction: column;
-    text-align: center;
+    padding: 20px 16px;
+    min-height: 160px;
+    gap: 16px;
   }
 
-  .next-btn,
-  .back-btn {
-    height: 52px;
-    font-size: 16px;
+  .corner-visual svg {
+    width: 120px;
+    height: 120px;
+  }
+
+  .corner-title {
+    font-size: 18px;
+  }
+
+  .footer-actions {
+    padding-top: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
   }
 
   .back-btn {
-    width: 52px;
+    width: 48px;
+    height: 48px;
   }
 }
 </style>

@@ -149,7 +149,36 @@ const handleMouseUp = () => {
 }
 
 // Touch gesture handlers
+let lastTouchTime = 0
+let lastTouchPoint = null
+let touchStartTime = 0
+let touchStartPoint = null
+
 const handleTouchStart = (event) => {
+  touchStartTime = Date.now()
+  const touch = event.touches[0]
+  touchStartPoint = { x: touch.clientX, y: touch.clientY }
+  // Предотвращаем автоматический зум браузера при двойном тапе
+  if (event.touches.length === 1) {
+    const touch = event.touches[0]
+    const now = Date.now()
+    const timeSinceLastTouch = now - lastTouchTime
+    const distance = lastTouchPoint 
+      ? Math.sqrt(
+          Math.pow(touch.clientX - lastTouchPoint.x, 2) + 
+          Math.pow(touch.clientY - lastTouchPoint.y, 2)
+        )
+      : 0
+    
+    // Если двойной тап в том же месте - предотвращаем зум
+    if (timeSinceLastTouch < 300 && distance < 10) {
+      event.preventDefault()
+    }
+    
+    lastTouchTime = now
+    lastTouchPoint = { x: touch.clientX, y: touch.clientY }
+  }
+  
   if (event.touches.length === 2) {
     // Pinch-to-zoom gesture
     const touch1 = event.touches[0]
@@ -190,7 +219,33 @@ const handleTouchMove = (event) => {
   }
 }
 
-const handleTouchEnd = () => {
+const handleTouchEnd = (event) => {
+  // Если это был короткий тап (не drag), проверяем клик на угол
+  if (event.changedTouches && event.changedTouches.length > 0 && !isDragging.value) {
+    const touchDuration = Date.now() - touchStartTime
+    const touch = event.changedTouches[0]
+    const distance = touchStartPoint 
+      ? Math.sqrt(
+          Math.pow(touch.clientX - touchStartPoint.x, 2) + 
+          Math.pow(touch.clientY - touchStartPoint.y, 2)
+        )
+      : 0
+    
+    // Если короткий тап без движения - это клик (только если не был зум)
+    if (touchDuration < 300 && distance < 10 && scale.value <= 1) {
+      setTimeout(() => {
+        const target = document.elementFromPoint(touch.clientX, touch.clientY)
+        if (target) {
+          const cornerPoint = target.closest('.corner-point')
+          if (cornerPoint && cornerPoint.dataset.cornerIndex) {
+            const cornerIndex = parseInt(cornerPoint.dataset.cornerIndex, 10)
+            emit('corner-click', cornerIndex)
+          }
+        }
+      }, 10)
+    }
+  }
+  
   isDragging.value = false
   initialDistance.value = 0
 }
@@ -216,6 +271,10 @@ const getDistance = (touch1, touch2) => {
   justify-content: center;
   position: relative;
   overflow: hidden;
+  touch-action: pan-x pan-y pinch-zoom;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .zoom-controls {
@@ -231,6 +290,12 @@ const getDistance = (touch1, touch2) => {
   padding: 6px 8px;
   box-shadow: var(--shadow-sm);
   z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .zoom-controls {
+    display: none;
+  }
 }
 
 .zoom-btn {

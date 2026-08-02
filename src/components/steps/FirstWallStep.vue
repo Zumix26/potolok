@@ -1,9 +1,11 @@
 <template>
   <div class="first-wall-step">
-    <div class="step-badge">Шаг 1</div>
-
-    <h1 class="title">Стена с дверью</h1>
-    <p class="subtitle">Встаньте лицом к двери и измерьте эту стену от угла до угла</p>
+    <div class="instruction-box">
+      <div class="instruction-content">
+        <p class="instruction-text">Встаньте лицом к стене с дверью</p>
+        <p class="instruction-detail">Измерьте длину стены от угла до угла (от точки A до точки B на схеме)</p>
+      </div>
+    </div>
 
     <div class="illustration">
       <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
@@ -96,9 +98,10 @@ onMounted(() => {
   flex-direction: column;
   flex: 1;
   padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   gap: 0;
-  overflow-y: auto;
   min-height: 0;
+  overflow: hidden;
 }
 
 .step-badge {
@@ -127,23 +130,54 @@ onMounted(() => {
   line-height: 1.3;
 }
 
+.instruction-box {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border: 2px solid #2563EB;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  flex-shrink: 0;
+}
+
+.instruction-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.instruction-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1E40AF;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.instruction-detail {
+  font-size: 13px;
+  color: #3B82F6;
+  line-height: 1.4;
+  margin: 0;
+}
+
 .illustration {
   background: var(--surface);
   border-radius: 16px;
-  padding: 12px;
-  margin-bottom: 20px;
+  padding: 8px;
+  margin-bottom: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  height: 450px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   overflow: hidden;
 }
 
 .picker-wrapper {
   margin-top: auto;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   margin-left: auto;
   margin-right: auto;
   flex-shrink: 0;
@@ -249,15 +283,15 @@ onMounted(() => {
 }
 
 .footer-actions {
-  margin-top: auto;
-  padding-top: 10px;
+  margin-top: 8px;
+  padding-top: 12px;
   flex-shrink: 0;
-  position: sticky;
-  bottom: 0;
   background: var(--bg);
-  padding-bottom: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
   display: flex;
   gap: 10px;
+  position: relative;
+  z-index: 10;
 }
 
 .back-btn {
@@ -308,32 +342,46 @@ onMounted(() => {
   transform: scale(0.98);
 }
 
-@media (max-width: 380px) {
+@media (max-width: 768px) {
   .first-wall-step {
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
 
-  .title {
-    font-size: 22px;
+  .instruction-box {
+    padding: 10px;
+    margin-bottom: 10px;
   }
 
-  .subtitle {
+  .instruction-text {
     font-size: 13px;
   }
 
+  .instruction-detail {
+    font-size: 11px;
+  }
+
   .illustration {
-    padding: 10px;
-    height: 150px;
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  .picker-wrapper {
+    padding: 12px;
+  }
+
+  .footer-actions {
+    padding-top: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
   }
 
   .next-btn,
   .back-btn {
-    height: 52px;
-    font-size: 16px;
+    height: 48px;
+    font-size: 15px;
   }
 
   .back-btn {
-    width: 52px;
+    width: 48px;
   }
 }
 </style>

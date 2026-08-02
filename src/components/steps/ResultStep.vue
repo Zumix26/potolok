@@ -6,7 +6,9 @@
       subtitle="Ваша комната успешно измерена и рассчитана"
     />
 
-    <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
+    <div class="preview-wrapper">
+      <PreviewArea :svgContent="svgContent" :viewBox="viewBox" />
+    </div>
 
     <div class="result-grid">
       <div class="result-card">
@@ -95,13 +97,25 @@ const shareIcon = `
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+.preview-wrapper {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+  min-height: 200px;
+  max-height: 300px;
 }
 
 .result-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin: 24px 0;
+  margin: 20px 0;
+  flex-shrink: 0;
 }
 
 .result-card {
@@ -162,12 +176,13 @@ const shareIcon = `
 }
 
 .diagonals-info {
-  margin-top: 20px;
+  margin-top: 16px;
   padding: 16px;
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .info-title {
@@ -211,5 +226,65 @@ const shareIcon = `
   font-weight: 700;
   color: var(--primary);
   font-family: 'JetBrains Mono', monospace;
+}
+
+@media (max-width: 768px) {
+  .step-content {
+    padding: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .preview-wrapper {
+    margin-bottom: 12px;
+    min-height: 150px;
+    max-height: 200px;
+  }
+
+  .result-grid {
+    gap: 10px;
+    margin: 12px 0;
+  }
+
+  .result-card {
+    padding: 14px 10px;
+  }
+
+  .result-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .result-label {
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  .result-unit {
+    font-size: 9px;
+  }
+
+  .diagonals-info {
+    margin-top: 10px;
+    padding: 10px;
+  }
+
+  .info-title {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .info-icon {
+    font-size: 14px;
+  }
+
+  .diagonal-item {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
 }
 </style>

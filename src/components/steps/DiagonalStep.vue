@@ -1,9 +1,7 @@
 <template>
   <div class="diagonal-step">
-    <div class="step-badge">Шаг {{ 3 + store.walls.length }}</div>
-
     <h1 class="title">Диагональ</h1>
-    <p class="subtitle">Измерьте диагональ для точного расчета площади</p>
+    <p class="subtitle">Для более точного расчета площади измерьте диагональ комнаты. Выберите два противоположных угла на схеме и укажите расстояние между ними.</p>
 
     <div class="illustration">
       <PreviewArea
@@ -11,6 +9,26 @@
         :viewBox="viewBox"
         @corner-click="handleCornerClick"
       />
+      <!-- Список добавленных диагоналей поверх канваса -->
+      <div v-if="store.diagonals.length > 0" class="diagonals-section">
+        <h2 class="diagonals-title">Добавленные диагонали</h2>
+        <div class="diagonals-list">
+          <div
+            v-for="(diagonal, index) in store.diagonals"
+            :key="index"
+            class="diagonal-item"
+          >
+            <span class="diagonal-label">
+              {{ String.fromCharCode(65 + diagonal.from) }} → {{ String.fromCharCode(65 + diagonal.to) }}: {{ diagonal.length }} см
+            </span>
+            <button class="remove-btn" @click="store.removeDiagonal(index)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Инструкция по выбору углов -->
@@ -54,40 +72,8 @@
         </svg>
         <span class="tip-text">Измерьте расстояние между выбранными углами</span>
       </div>
-
-      <button
-        class="add-diagonal-btn"
-        :class="{ active: store.diagonalValid }"
-        :disabled="!store.diagonalValid"
-        @click="store.handleAddDiagonal"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
-          <path d="M20 6L9 17l-5-5"/>
-        </svg>
-        Добавить диагональ
-      </button>
     </div>
 
-    <!-- Список добавленных диагоналей -->
-    <div v-if="store.diagonals.length > 0" class="diagonals-section">
-      <h2 class="diagonals-title">Добавленные диагонали</h2>
-      <div class="diagonals-list">
-        <div
-          v-for="(diagonal, index) in store.diagonals"
-          :key="index"
-          class="diagonal-item"
-        >
-          <span class="diagonal-label">
-            {{ String.fromCharCode(65 + diagonal.from) }} → {{ String.fromCharCode(65 + diagonal.to) }}: {{ diagonal.length }} см
-          </span>
-          <button class="remove-btn" @click="store.removeDiagonal(index)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-              <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
 
     <div class="footer-actions">
       <button
@@ -99,21 +85,45 @@
           <path d="M15 18l-6-6 6-6"/>
         </svg>
       </button>
+      
+      <!-- Когда выбраны оба угла и диагональ валидна - показываем "Добавить диагональ" -->
       <button
-        v-if="store.diagonals.length === 0"
+        v-if="store.selectedDiagonalFrom !== null && store.selectedDiagonalTo !== null && store.diagonalValid"
+        class="add-diagonal-btn active"
+        @click="store.handleAddDiagonal"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+        Добавить диагональ
+      </button>
+      
+      <!-- Когда выбраны оба угла, но диагональ не валидна - показываем "Пропустить" -->
+      <button
+        v-if="store.selectedDiagonalFrom !== null && store.selectedDiagonalTo !== null && !store.diagonalValid"
         class="skip-btn"
         @click="store.handleSkipDiagonal"
       >
         Пропустить
       </button>
+      
+      <!-- Когда НЕ выбраны оба угла и нет диагоналей - показываем "Пропустить" -->
       <button
-        class="next-btn"
-        :class="{ active: store.diagonals.length > 0 }"
-        :disabled="store.diagonals.length === 0"
+        v-if="(store.selectedDiagonalFrom === null || store.selectedDiagonalTo === null) && store.diagonals.length === 0"
+        class="skip-btn"
+        @click="store.handleSkipDiagonal"
+      >
+        Пропустить
+      </button>
+      
+      <!-- Когда НЕ выбраны оба угла, но есть диагонали - показываем "Завершить" -->
+      <button
+        v-if="(store.selectedDiagonalFrom === null || store.selectedDiagonalTo === null) && store.diagonals.length > 0"
+        class="next-btn active"
         @click="store.handleFinishDiagonals"
       >
-        {{ store.diagonals.length > 0 ? `Завершить (${store.diagonals.length})` : 'Добавьте диагональ' }}
-        <svg v-if="store.diagonals.length > 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+        Завершить ({{ store.diagonals.length }})
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
           <path d="M9 18l6-6-6-6"/>
         </svg>
       </button>
@@ -188,9 +198,10 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  padding: 12px 16px;
+  padding: 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   gap: 0;
-  overflow-y: auto;
+  overflow: hidden;
   min-height: 0;
 }
 
@@ -202,188 +213,233 @@ onMounted(() => {
   border-radius: 100px;
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
   line-height: 1.2;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   color: var(--text);
+  text-align: center;
 }
 
 .subtitle {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-secondary);
-  margin-bottom: 10px;
-  line-height: 1.3;
+  margin-bottom: 20px;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .illustration {
   background: var(--surface);
-  border-radius: 16px;
-  padding: 12px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  height: 180px;
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  flex: 1;
+  min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  flex-shrink: 1;
   overflow: hidden;
+  position: relative;
 }
 
 .instruction-section {
-  background: #FEF3C7;
-  border: 2px solid #F59E0B;
-  border-radius: 14px;
-  padding: 12px;
-  margin-bottom: 10px;
+  background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+  border: 3px solid #F59E0B;
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 16px;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 .instruction-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .instruction-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   color: #D97706;
 }
 
 .instruction-text {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   color: #92400E;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .input-section {
   background: var(--surface);
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  margin-bottom: 10px;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
   flex-shrink: 0;
 }
 
 .input-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 16px;
   display: block;
+  text-align: center;
 }
 
 .picker-container {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
 }
 
 .input-unit {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-secondary);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
 }
 
 .tip {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: #EFF6FF;
-  border-radius: 10px;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border-radius: 14px;
+  border: 2px solid #2563EB;
 }
 
 .tip-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   color: #2563EB;
 }
 
 .tip-text {
-  font-size: 13px;
-  color: #2563EB;
-  line-height: 1.3;
-  font-weight: 500;
+  font-size: 14px;
+  color: #1E40AF;
+  line-height: 1.4;
+  font-weight: 600;
 }
 
 .add-diagonal-btn {
   width: 100%;
-  height: 52px;
-  margin-top: 16px;
+  height: 64px;
+  margin-top: 20px;
   border: none;
-  border-radius: 12px;
+  border-radius: 18px;
   background: var(--border-light);
   color: var(--text-secondary);
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   cursor: not-allowed;
   font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .add-diagonal-btn.active {
-  background: #10B981;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   color: white;
   cursor: pointer;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.add-diagonal-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
 }
 
 .add-diagonal-btn.active:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 .diagonals-section {
-  background: var(--surface);
-  border-radius: 16px;
-  padding: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  margin-bottom: 10px;
-  flex-shrink: 0;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  max-width: 120px;
+  max-height: 100px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  pointer-events: auto;
 }
 
 .diagonals-title {
-  font-size: 14px;
+  font-size: 7px;
   font-weight: 800;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  color: var(--text);
+  margin-bottom: 2px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.2px;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .diagonals-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.diagonals-list::-webkit-scrollbar {
+  width: 2px;
+}
+
+.diagonals-list::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 1px;
 }
 
 .diagonal-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #D1FAE5;
-  border: 2px solid #10B981;
-  border-radius: 12px;
-  padding: 12px 16px;
+  background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+  border: 1px solid #10B981;
+  border-radius: 4px;
+  padding: 2px 4px;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
+
 .diagonal-label {
-  font-size: 14px;
+  font-size: 8px;
   font-weight: 700;
   color: #065F46;
   font-family: 'JetBrains Mono', monospace;
+  line-height: 1.1;
 }
 
 .remove-btn {
@@ -391,36 +447,46 @@ onMounted(() => {
   border: none;
   color: #EF4444;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
+  padding: 1px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  margin-left: 3px;
+}
+
+.remove-btn svg {
+  width: 10px;
+  height: 10px;
 }
 
 .remove-btn:hover {
   background: #EF4444;
   color: white;
+  transform: scale(1.1);
 }
 
 .footer-actions {
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 16px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
   background: var(--bg);
-  padding-bottom: 12px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
 
 .back-btn {
-  width: 56px;
-  height: 56px;
-  border: 2px solid var(--border-light);
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  border: 3px solid var(--border-light);
+  border-radius: 18px;
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
@@ -428,87 +494,131 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  border-color: var(--primary);
 }
 
 .back-btn:active {
-  transform: scale(0.95);
+  transform: translateY(0) scale(0.95);
 }
 
 .skip-btn {
   flex: 1;
-  height: 56px;
-  border: 2px solid var(--border-light);
-  border-radius: 12px;
+  height: 64px;
+  border: 3px solid var(--border-light);
+  border-radius: 18px;
   background: var(--surface);
   color: var(--text-secondary);
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.skip-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .skip-btn:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 .next-btn {
   flex: 2;
-  height: 56px;
+  height: 64px;
   border: none;
-  border-radius: 12px;
+  border-radius: 18px;
   background: var(--border-light);
   color: var(--text-secondary);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
   cursor: not-allowed;
   font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .next-btn.active {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, #1D4ED8 100%);
   color: white;
   cursor: pointer;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+}
+
+.next-btn.active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.4);
 }
 
 .next-btn.active:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
-@media (max-width: 380px) {
+@media (max-width: 768px) {
   .diagonal-step {
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
 
   .title {
     font-size: 22px;
+    margin-bottom: 6px;
   }
 
   .subtitle {
     font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .instruction-section {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
+  .instruction-text {
+    font-size: 12px;
   }
 
   .illustration {
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  .input-section {
     padding: 10px;
-    height: 150px;
+    margin-bottom: 10px;
   }
 
-  .next-btn,
+  .footer-actions {
+    padding-top: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .add-diagonal-btn,
   .skip-btn,
-  .back-btn {
-    height: 52px;
-    font-size: 16px;
+  .next-btn {
+    height: 48px;
+    font-size: 15px;
   }
 
   .back-btn {
-    width: 52px;
+    width: 48px;
+    height: 48px;
   }
 }
 </style>

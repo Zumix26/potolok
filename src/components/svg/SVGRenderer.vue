@@ -6,6 +6,7 @@
     v-html="content"
     @click="handleClick"
     @mousedown="handleMouseDown"
+    @touchstart="handleTouchStart"
   />
 </template>
 
@@ -46,21 +47,15 @@ const handleClick = (event) => {
   }
 }
 
-const handleMouseDown = (event) => {
-  // Проверяем, кликнули ли на элемент или на его дочерний элемент
-  let target = event.target
-  if (!target.classList.contains('fixture-item')) {
-    target = target.closest('.fixture-item')
-  }
-  
+const startDrag = (clientX, clientY, target) => {
   if (!target || target.tagName !== 'g') return
 
   isDragging = true
   draggedElement = target
   const svg = svgElement.value
   const point = svg.createSVGPoint()
-  point.x = event.clientX
-  point.y = event.clientY
+  point.x = clientX
+  point.y = clientY
   const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse())
   
   // Получаем текущую позицию из transform
@@ -71,6 +66,20 @@ const handleMouseDown = (event) => {
   
   startX = svgPoint.x - currentX
   startY = svgPoint.y - currentY
+
+  return { startX, startY }
+}
+
+const handleMouseDown = (event) => {
+  // Проверяем, кликнули ли на элемент или на его дочерний элемент
+  let target = event.target
+  if (!target.classList.contains('fixture-item')) {
+    target = target.closest('.fixture-item')
+  }
+  
+  if (!target || target.tagName !== 'g') return
+
+  startDrag(event.clientX, event.clientY, target)
 
   const handleMouseMove = (e) => {
     if (!isDragging || !draggedElement) return
@@ -101,6 +110,56 @@ const handleMouseDown = (event) => {
 
   document.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('mouseup', handleMouseUp)
+  event.preventDefault()
+}
+
+const handleTouchStart = (event) => {
+  // Если два пальца - это pinch zoom, пропускаем
+  if (event.touches.length > 1) return
+  
+  // Проверяем, кликнули ли на элемент или на его дочерний элемент
+  let target = event.target
+  if (!target.classList.contains('fixture-item')) {
+    target = target.closest('.fixture-item')
+  }
+  
+  if (!target || target.tagName !== 'g') return
+
+  const touch = event.touches[0]
+  startDrag(touch.clientX, touch.clientY, target)
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || !draggedElement || e.touches.length !== 1) return
+    
+    const touch = e.touches[0]
+    const svg = svgElement.value
+    const point = svg.createSVGPoint()
+    point.x = touch.clientX
+    point.y = touch.clientY
+    const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse())
+    
+    const newX = svgPoint.x - startX
+    const newY = svgPoint.y - startY
+    
+    // Обновляем transform группы
+    draggedElement.setAttribute('transform', `translate(${newX}, ${newY})`)
+    
+    const type = draggedElement.dataset.type
+    const id = parseInt(draggedElement.dataset.id)
+    emit('fixture-drag', type, id, newX, newY)
+    
+    e.preventDefault()
+  }
+
+  const handleTouchEnd = () => {
+    isDragging = false
+    draggedElement = null
+    document.removeEventListener('touchmove', handleTouchMove)
+    document.removeEventListener('touchend', handleTouchEnd)
+  }
+
+  document.addEventListener('touchmove', handleTouchMove, { passive: false })
+  document.addEventListener('touchend', handleTouchEnd)
   event.preventDefault()
 }
 

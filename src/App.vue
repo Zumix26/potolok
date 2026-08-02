@@ -59,12 +59,37 @@ onMounted(() => {
       if (activeButton) activeButton.click()
     }
   })
+
+  // Исправление высоты для мобильных устройств (особенно iOS Safari)
+  const setViewportHeight = () => {
+    const vh = window.innerHeight * 0.01
+    document.documentElement.style.setProperty('--vh', `${vh}px`)
+  }
+  
+  setViewportHeight()
+  window.addEventListener('resize', setViewportHeight)
+  window.addEventListener('orientationchange', setViewportHeight)
+  
+  // Для iOS Safari - обновляем при скролле (когда адресная строка скрывается/появляется)
+  let lastHeight = window.innerHeight
+  const checkHeight = () => {
+    const currentHeight = window.innerHeight
+    if (Math.abs(currentHeight - lastHeight) > 50) {
+      setViewportHeight()
+      lastHeight = currentHeight
+    }
+  }
+  
+  window.addEventListener('scroll', checkHeight)
+  window.addEventListener('resize', checkHeight)
 })
 </script>
 
 <style scoped>
 .main-container {
-  height: calc(100vh - 50px);
+  height: calc(var(--vh, 1vh) * 100 - 50px);
+  min-height: calc(100svh - 50px);
+  max-height: calc(100vh - 50px);
   display: flex;
   flex-direction: column;
   overflow: hidden;

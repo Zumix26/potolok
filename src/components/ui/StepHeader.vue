@@ -29,6 +29,7 @@ defineProps({
 .step-header {
   text-align: center;
   margin-bottom: 32px;
+  flex-shrink: 0;
 }
 
 .step-icon {
@@ -64,9 +65,40 @@ defineProps({
   margin: 0 auto;
 }
 
-@media (max-width: 380px) {
+@media (max-width: 768px) {
+  .step-header {
+    margin-bottom: 20px;
+  }
+
+  .step-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+  }
+
+  .step-icon :deep(svg) {
+    width: 22px;
+    height: 22px;
+  }
+
   .step-title {
     font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .step-subtitle {
+    font-size: 13px;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .step-title {
+    font-size: 18px;
+  }
+
+  .step-subtitle {
+    font-size: 12px;
   }
 }
 </style>

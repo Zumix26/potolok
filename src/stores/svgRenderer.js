@@ -86,22 +86,27 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
                 font-size="16" font-weight="800" fill="#2563EB">B</text>
 
           <!-- Measurement arrows -->
-          <line x1="${startX + 10}" y1="${startY + 30}" x2="${endX - 10}" y2="${endY + 30}"
+          <line x1="${startX + 10}" y1="${startY + 15}" x2="${endX - 10}" y2="${endY + 15}"
                 stroke="#2563EB" stroke-width="2"
                 marker-end="url(#arrow)" marker-start="url(#arrow-start)"/>
 
           <!-- Dimension label -->
-          <rect x="${midX - 35}" y="${startY + 18}" width="70" height="28"
+          <rect x="${midX - 35}" y="${startY + 3}" width="70" height="28"
                 rx="6" fill="white"/>
-          <text x="${midX}" y="${startY + 38}" text-anchor="middle"
+          <text x="${midX}" y="${startY + 22}" text-anchor="middle"
                 font-size="20" font-weight="800" fill="#2563EB">${showQuestionMark ? '?' : (length && length > 0 ? length + ' см' : '?')}</text>
 
-          <!-- You are here -->
-          <circle cx="150" cy="220" r="12" fill="#2563EB"/>
-          <text x="150" y="224" text-anchor="middle"
+          <!-- You are here - centered on the wall but at distance from it -->
+          <!-- Wall is horizontal, so place circle below the wall -->
+            <!-- Thick short arrow pointing to the wall (upward) -->
+          <line x1="${midX}" y1="${startY + 31}" x2="${midX}" y2="${startY + 30}"
+                stroke="#2563EB" stroke-width="3" marker-end="url(#arrow)"/>
+          <circle cx="${midX}" cy="${startY + 55}" r="12" fill="#2563EB"/>
+          <text x="${midX}" y="${startY + 59}" text-anchor="middle"
                 font-size="14" fill="white">👤</text>
-          <text x="150" y="245" text-anchor="middle"
+          <text x="${midX}" y="${startY + 75}" text-anchor="middle"
                 font-size="12" font-weight="700" fill="#64748B">Вы здесь</text>
+        
 
         
         </svg>
@@ -135,9 +140,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
           html += `
             <line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" class="room-wall"/>
-            <rect x="${startX + scaledLength * 0.3}" y="${startY - 6}" width="${scaledLength * 0.2}" height="12"
-                  fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-            <text x="${startX + scaledLength * 0.4}" y="${startY + 15}" class="room-dimension" font-size="8">дверь</text>
             <circle cx="${startX}" cy="${startY}" r="6" class="room-corner"/>
             <circle cx="${endX}" cy="${endY}" r="6" class="room-corner active"/>
             <text x="${startX}" y="${startY + 20}" class="room-label">A</text>
@@ -203,15 +205,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
           html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
 
-          if (i === 0 && p2.x > p1.x) {
-            const doorStart = p1.x + (p2.x - p1.x) * 0.3
-            const doorWidth = (p2.x - p1.x) * 0.2
-            html += `
-              <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
-                    fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-              <text x="${doorStart + doorWidth/2}" y="${p1.y + 15}" class="room-dimension" font-size="8">дверь</text>
-            `
-          }
 
           const midX = (p1.x + p2.x) / 2
           const midY = (p1.y + p2.y) / 2
@@ -304,9 +297,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       const points = calculateRoomPointsForPreview(testWalls, testCorners)
       let allPoints = [...points]
       let html = ''
-      let lastWallMidX = null
-      let lastWallY = null
-      let lastWallIsVertical = false
 
       for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i]
@@ -315,26 +305,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         // Определяем, является ли эта стена редактируемой (последняя добавленная)
         const isEditing = i === walls.length && newLength !== null
 
-        if (isEditing) {
-          const midX = (p1.x + p2.x) / 2
-          const midY = (p1.y + p2.y) / 2
-          
-          // Вычисляем нормаль к стене для размещения надписи с внешней стороны
-          const dx = p2.x - p1.x
-          const dy = p2.y - p1.y
-          const length = Math.sqrt(dx * dx + dy * dy) || 1
-          const perpX = -dy / length
-          const perpY = dx / length
-          
-          // Определяем, вертикальная ли стена (изменение по Y больше чем по X)
-          const isVertical = Math.abs(dy) > Math.abs(dx)
-          
-          // Размещаем надпись на расстоянии 15 единиц от стены по нормали
-          lastWallMidX = midX + perpX * 15
-          lastWallY = midY + perpY * 15
-          lastWallIsVertical = isVertical
-        }
-
         // Стена всегда синяя, не меняем её визуально
         html += `
           <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
@@ -342,14 +312,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
                 stroke-width="3"/>
         `
 
-        if (i === 0) {
-          const doorStart = p1.x + (p2.x - p1.x) * 0.3
-          const doorWidth = (p2.x - p1.x) * 0.2
-          html += `
-            <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
-                  fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-          `
-        }
 
         const midX = (p1.x + p2.x) / 2
         const midY = (p1.y + p2.y) / 2
@@ -436,28 +398,47 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       }
 
-      // Добавляем надпись "редактируете эту стену" над последней стеной
-      if (lastWallMidX !== null && lastWallY !== null && newLength) {
-        if (lastWallIsVertical) {
-          // Для вертикальной стены - текст горизонтальный, но слова в столбик, сбоку от стены
+      // Добавляем "Вы здесь" по центру редактируемой стены, но на расстоянии от неё
+      if (newLength && points.length >= 2) {
+        const editingWallIndex = walls.length
+        if (editingWallIndex < points.length - 1) {
+          const p1 = points[editingWallIndex]
+          const p2 = points[editingWallIndex + 1]
+          const wallMidX = (p1.x + p2.x) / 2
+          const wallMidY = (p1.y + p2.y) / 2
+          
+          // Вычисляем нормаль к стене (перпендикуляр) для размещения кружка
+          const dx = p2.x - p1.x
+          const dy = p2.y - p1.y
+          const length = Math.sqrt(dx * dx + dy * dy) || 1
+          const perpX = -dy / length  // Перпендикулярный вектор
+          const perpY = dx / length
+          
+          // Размещаем кружок на расстоянии 50 единиц от стены по нормали
+          const distance = 50
+          const circleX = wallMidX + perpX * distance
+          const circleY = wallMidY + perpY * distance
+          
+          // Короткая толстая стрелка от кружка к стене (в обратном направлении нормали)
+          const arrowLength = 15  // Короткая стрелка
+          const arrowStartX = circleX - perpX * 8
+          const arrowStartY = circleY - perpY * 8
+          const arrowEndX = circleX - perpX * (8 + arrowLength)
+          const arrowEndY = circleY - perpY * (8 + arrowLength)
+          
           html += `
-            <text x="${lastWallMidX}" y="${lastWallY}" font-size="8" font-weight="400" fill="#64748B" 
-                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
-                  text-anchor="middle" dominant-baseline="middle">
-              <tspan x="${lastWallMidX}" dy="-20">✎ сейчас</tspan>
-              <tspan x="${lastWallMidX}" dy="10">вы</tspan>
-              <tspan x="${lastWallMidX}" dy="10">редактируете</tspan>
-              <tspan x="${lastWallMidX}" dy="10">эту стену</tspan>
-            </text>
-          `
-        } else {
-          // Для горизонтальной стены - обычный текст
-          html += `
-            <text x="${lastWallMidX}" y="${lastWallY}" font-size="10" font-weight="400" fill="#64748B" 
-                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
-                  text-anchor="middle">
-              ✎ сейчас вы редактируете эту стену
-            </text>
+            <defs>
+              <marker id="arrow-you-here-wac" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#2563EB" opacity="0.6"/>
+              </marker>
+            </defs>
+            <circle cx="${circleX}" cy="${circleY}" r="12" fill="#2563EB"/>
+            <text x="${circleX}" y="${circleY + 4}" text-anchor="middle"
+                  font-size="14" fill="white">👤</text>
+            <text x="${circleX}" y="${circleY + 25}" text-anchor="middle"
+                  font-size="12" font-weight="700" fill="#64748B">Вы здесь</text>
+            <line x1="${arrowStartX}" y1="${arrowStartY}" x2="${arrowEndX}" y2="${arrowEndY}"
+                  stroke="#2563EB" stroke-width="3" marker-end="url(#arrow-you-here-wac)" opacity="0.6"/>
           `
         }
       }
@@ -480,10 +461,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       let allPoints = [...points]
       let html = ''
 
-      let lastWallMidX = null
-      let lastWallY = null
-      let lastWallIsVertical = false
-
       for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i]
         const p2 = points[i + 1]
@@ -491,24 +468,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
         // Подсветка последней стены
         if (isLastWall && newLength) {
-          const midX = (p1.x + p2.x) / 2
-          const midY = (p1.y + p2.y) / 2
-          
-          // Вычисляем нормаль к стене для размещения надписи с внешней стороны
-          const dx = p2.x - p1.x
-          const dy = p2.y - p1.y
-          const length = Math.sqrt(dx * dx + dy * dy) || 1
-          const perpX = -dy / length
-          const perpY = dx / length
-          
-          // Определяем, вертикальная ли стена (изменение по Y больше чем по X)
-          const isVertical = Math.abs(dy) > Math.abs(dx)
-          
-          // Размещаем надпись на расстоянии 15 единиц от стены по нормали
-          lastWallMidX = midX + perpX * 15
-          lastWallY = midY + perpY * 15
-          lastWallIsVertical = isVertical
-          
           html += `
             <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
                   stroke="#2563EB"
@@ -535,32 +494,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
                   rx="4" fill="white" stroke="${labelColor}" stroke-width="2"/>
             <text x="${midX}" y="${midY + 4}" text-anchor="middle"
                   font-size="14" font-weight="700" fill="${labelColor}">${length}</text>
-          `
-        }
-      }
-
-      // Добавляем надпись "редактируете эту стену" над последней стеной
-      if (lastWallMidX !== null && lastWallY !== null && newLength) {
-        if (lastWallIsVertical) {
-          // Для вертикальной стены - текст горизонтальный, но слова в столбик, сбоку от стены
-          html += `
-            <text x="${lastWallMidX}" y="${lastWallY}" font-size="8" font-weight="400" fill="#64748B" 
-                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
-                  text-anchor="middle" dominant-baseline="middle">
-              <tspan x="${lastWallMidX}" dy="-20">✎ сейчас</tspan>
-              <tspan x="${lastWallMidX}" dy="10">вы</tspan>
-              <tspan x="${lastWallMidX}" dy="10">редактируете</tspan>
-              <tspan x="${lastWallMidX}" dy="10">эту стену</tspan>
-            </text>
-          `
-        } else {
-          // Для горизонтальной стены - обычный текст
-          html += `
-            <text x="${lastWallMidX}" y="${lastWallY}" font-size="10" font-weight="400" fill="#64748B" 
-                  font-family="'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" opacity="0.7"
-                  text-anchor="middle">
-              ✎ сейчас вы редактируете эту стену
-            </text>
           `
         }
       }
@@ -617,6 +550,51 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       }
 
+      // Добавляем "Вы здесь" по центру редактируемой стены, но на расстоянии от неё
+      if (newLength && points.length >= 2) {
+        const lastWallIndex = points.length - 2
+        const p1 = points[lastWallIndex]
+        const p2 = points[lastWallIndex + 1]
+        const wallMidX = (p1.x + p2.x) / 2
+        const wallMidY = (p1.y + p2.y) / 2
+        
+        // Вычисляем нормаль к стене (перпендикуляр) для размещения кружка
+        const dx = p2.x - p1.x
+        const dy = p2.y - p1.y
+        const length = Math.sqrt(dx * dx + dy * dy) || 1
+        const perpX = -dy / length  // Перпендикулярный вектор
+        const perpY = dx / length
+        
+        // Размещаем кружок на расстоянии 50 единиц от стены по нормали
+        const distance = 50
+        const circleX = wallMidX + perpX * distance
+        const circleY = wallMidY + perpY * distance
+        
+        // Короткая толстая стрелка от кружка к стене (в обратном направлении нормали)
+        const arrowLength = 15  // Короткая стрелка
+        const arrowStartX = circleX - perpX * 8
+        const arrowStartY = circleY - perpY * 8
+        const arrowEndX = circleX - perpX * (8 + arrowLength)
+        const arrowEndY = circleY - perpY * (8 + arrowLength)
+        
+        html += `
+        
+         <line x1="${arrowStartX}" y1="${arrowStartY}" x2="${arrowEndX}" y2="${arrowEndY}"
+                stroke="#2563EB" stroke-width="3" marker-end="url(#arrow-you-here)" />
+          <defs>
+            <marker id="arrow-you-here" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#2563EB"/>
+            </marker>
+          </defs>
+          <circle cx="${circleX}" cy="${circleY}" r="12" fill="#2563EB"/>
+          <text x="${circleX}" y="${circleY + 4}" text-anchor="middle"
+                font-size="14" fill="white">👤</text>
+          <text x="${circleX}" y="${circleY + 25}" text-anchor="middle"
+                font-size="12" font-weight="700" fill="#64748B">Вы здесь</text>
+        
+        `
+      }
+
       const { minX, minY, maxX, maxY } = calculateBoundingBox(allPoints, 50)
       const width = maxX - minX
       const height = maxY - minY
@@ -635,14 +613,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const p2 = points[(i + 1) % points.length]
         html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
 
-        if (i === 0) {
-          const doorStart = p1.x + (p2.x - p1.x) * 0.3
-          const doorWidth = (p2.x - p1.x) * 0.2
-          html += `
-            <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
-                  fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-          `
-        }
       }
 
       // Рисуем все существующие диагонали
@@ -765,16 +735,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         `
       })
 
-      if (points.length >= 2) {
-        const p1 = points[0]
-        const p2 = points[1]
-        const doorStart = p1.x + (p2.x - p1.x) * 0.3
-        const doorWidth = (p2.x - p1.x) * 0.2
-        html += `
-          <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
-                fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-        `
-      }
 
       walls.forEach((length, i) => {
         if (i < points.length) {
@@ -832,14 +792,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const p2 = points[(i + 1) % points.length]
         html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
 
-        if (i === 0) {
-          const doorStart = p1.x + (p2.x - p1.x) * 0.3
-          const doorWidth = (p2.x - p1.x) * 0.2
-          html += `
-            <rect x="${doorStart}" y="${p1.y - 6}" width="${doorWidth}" height="12"
-                  fill="white" stroke="#0066FF" stroke-width="2" rx="2"/>
-          `
-        }
       }
 
       // Рисуем светильники (используем актуальные позиции из store)

@@ -144,28 +144,73 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
       if (this.stepIndex > 0) {
         this.stepIndex--
 
-        if (this.currentStep === STEPS.WALL_AND_CORNER) {
+        if (this.currentStep === STEPS.CORNER_SELECTION) {
+          // Вернуться к первой стене
+          // Удаляем угол, если он был добавлен
+          if (this.corners.length > 0 && this.corners.length === this.walls.length) {
+            this.corners.pop()
+          }
+          this.selectedCorner = null
+          this.goToStep(STEPS.FIRST_WALL)
+        } else if (this.currentStep === STEPS.NEXT_WALL) {
+          // Вернуться к выбору угла
+          // Удаляем угол, если он был добавлен
+          if (this.corners.length > 0 && this.corners.length === this.walls.length) {
+            this.corners.pop()
+          }
+          this.selectedCorner = null
+          this.goToStep(STEPS.CORNER_SELECTION)
+        } else if (this.currentStep === STEPS.WALL_AND_CORNER) {
+          // Вернуться назад в цепочке стен
           if (this.walls.length === 1) {
-            // Вернуться к первой стене
+            // Вернуться к первой стене (удаляем первую стену)
+            this.walls.pop()
             this.selectedCorner = null
             this.goToStep(STEPS.FIRST_WALL)
+          } else if (this.walls.length === 2) {
+            // Вернуться к выбору угла после первой стены
+            // Удаляем последнюю стену и угол
+            this.walls.pop()
+            if (this.corners.length > 0) {
+              this.corners.pop()
+            }
+            this.selectedCorner = null
+            this.goToStep(STEPS.CORNER_SELECTION)
           } else {
             // Удалить последнюю стену и угол
             this.walls.pop()
-            if (this.corners.length > 0) {
+            if (this.corners.length > 0 && this.corners.length >= this.walls.length) {
               this.selectedCorner = this.corners.pop()
+            } else {
+              this.selectedCorner = 'inner'
+            }
+            // Восстанавливаем значение следующей стены
+            if (this.walls.length > 0) {
+              this.inputs.nextWall = String(this.walls[this.walls.length - 1])
             }
             this.goToStep(STEPS.WALL_AND_CORNER)
           }
         } else if (this.currentStep === STEPS.DIAGONAL) {
-          this.goToStep(STEPS.WALL_AND_CORNER)
+          // Вернуться к последнему шагу добавления стены
+          // Определяем, была ли комната замкнута
+          if (this.walls.length >= 4) {
+            // Комната была замкнута, возвращаемся к WALL_AND_CORNER
+            // Но нужно восстановить состояние - удалить последнюю стену
+            // Но это сложно, так как мы не знаем, была ли она добавлена
+            // Просто возвращаемся к WALL_AND_CORNER
+            this.goToStep(STEPS.WALL_AND_CORNER)
+          } else {
+            this.goToStep(STEPS.WALL_AND_CORNER)
+          }
         } else if (this.currentStep === STEPS.FIXTURES) {
+          // Вернуться к диагоналям
           this.goToStep(STEPS.DIAGONAL)
         } else if (this.currentStep === STEPS.RESULT) {
+          // Вернуться к предыдущему шагу
           if (this.shouldAddDiagonal) {
             this.goToStep(STEPS.FIXTURES)
           } else {
-            this.goToStep(STEPS.WALL_AND_CORNER)
+            this.goToStep(STEPS.DIAGONAL)
           }
         }
       }
@@ -202,11 +247,18 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     handleCornerNext() {
       if (!this.selectedCorner) return
 
-      // Добавляем выбранный угол
-      this.corners.push(this.selectedCorner)
+      // Если угол уже был добавлен (при возврате назад), заменяем его
+      // Иначе просто добавляем новый
+      if (this.corners.length > 0 && this.corners.length === this.walls.length) {
+        // Заменяем последний угол
+        this.corners[this.corners.length - 1] = this.selectedCorner
+      } else if (this.corners.length < this.walls.length) {
+        // Добавляем новый угол
+        this.corners.push(this.selectedCorner)
+      }
 
       // Увеличиваем stepIndex
-      this.stepIndex++
+      this.stepIndex = this.walls.length + 1
 
       // Сбросить ввод и выбор для следующего шага
       this.inputs.nextWall = '250'
@@ -226,7 +278,7 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         const willBeClosed = isRoomClosed(this.walls, this.corners, nextWall, type)
         svgStore.drawWallAndCornerPreview(this.walls, this.corners, nextWall, willBeClosed ? null : type)
       } else {
-        svgStore.drawWallAndCornerPreview(this.walls, this.corners, null, type)
+        svgStore.drawCornerPreview(this.walls, this.corners, type)
       }
     },
 
@@ -254,14 +306,15 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
       const value = parseFloat(this.inputs.nextWall)
 
       // Проверяем, замкнется ли комната после добавления этой стены
-      // Используем 'inner' для проверки по умолчанию
-      const willBeClosed = isRoomClosed(this.walls, this.corners, value, 'inner')
+      // Используем угол из corners, если он есть
+      const corner = this.corners.length > 0 ? this.corners[this.corners.length - 1] : 'inner'
+      const willBeClosed = isRoomClosed(this.walls, this.corners, value, corner)
 
       // Добавляем стену
       this.walls.push(value)
 
       // Увеличиваем stepIndex для прогресса
-      this.stepIndex++
+      this.stepIndex = this.walls.length
 
       // Сбрасываем для следующего цикла
       this.inputs.nextWall = '250'
@@ -271,6 +324,7 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         this.handleFinishRoom()
       } else {
         // Комната не замкнулась - переходим к выбору угла
+        this.selectedCorner = null
         this.goToStep(STEPS.CORNER_SELECTION)
       }
     },
@@ -292,7 +346,7 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         this.walls.push(value)
 
         // Увеличить stepIndex для прогресса
-        this.stepIndex++
+        this.stepIndex = this.walls.length
 
         // Сбросить для следующего цикла (значения не нужны, так как переходим дальше)
         this.inputs.nextWall = '250'
@@ -302,12 +356,18 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         this.handleFinishRoom()
       } else {
         // Если комната не замкнется, нужен угол (используем дефолтный, если не выбран)
-        // Добавить стену и угол
+        // Добавить стену
         this.walls.push(value)
-        this.corners.push(corner)
+        
+        // Если угол уже был добавлен (при возврате назад), заменяем его
+        if (this.corners.length > 0 && this.corners.length === this.walls.length - 1) {
+          this.corners[this.corners.length - 1] = corner
+        } else if (this.corners.length < this.walls.length) {
+          this.corners.push(corner)
+        }
 
         // Увеличить stepIndex для прогресса
-        this.stepIndex++
+        this.stepIndex = this.walls.length
 
         // Сбросить для следующего цикла (с значениями по умолчанию)
         this.inputs.nextWall = '250'
@@ -429,7 +489,32 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     },
 
     // Обработчики элементов
+    // Сохранить текущие позиции из DOM перед перерисовкой
+    saveCurrentFixturePositions() {
+      const svgElement = document.querySelector('.preview-svg')
+      if (!svgElement) return
+      
+      // Сохраняем позиции всех элементов из DOM
+      const fixtureItems = svgElement.querySelectorAll('.fixture-item')
+      fixtureItems.forEach((item) => {
+        const type = item.dataset.type
+        const id = parseFloat(item.dataset.id)
+        const transform = item.getAttribute('transform')
+        const match = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
+        if (match && type && !isNaN(id)) {
+          const x = parseFloat(match[1])
+          const y = parseFloat(match[2])
+          if (!isNaN(x) && !isNaN(y)) {
+            this.updateFixturePosition(type, id, x, y)
+          }
+        }
+      })
+    },
+
     handleFixtureCountInput(value) {
+      // Сохраняем текущие позиции ПЕРЕД изменением
+      this.saveCurrentFixturePositions()
+      
       this.inputs.fixtureCount = value
       const count = parseInt(value) || 0
       const oldCount = this.fixtures.lights
@@ -457,6 +542,9 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     },
 
     handlePipeCountInput(value) {
+      // Сохраняем текущие позиции ПЕРЕД изменением
+      this.saveCurrentFixturePositions()
+      
       this.inputs.pipeCount = value
       const count = parseInt(value) || 0
       const oldCount = this.fixtures.pipes
@@ -483,6 +571,9 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     },
 
     handleOtherCountInput(value) {
+      // Сохраняем текущие позиции ПЕРЕД изменением
+      this.saveCurrentFixturePositions()
+      
       this.inputs.otherCount = value
       const count = parseInt(value) || 0
       const oldCount = this.fixtures.other
