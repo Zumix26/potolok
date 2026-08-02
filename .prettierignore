@@ -1,0 +1,4 @@
+dist
+node_modules
+*.backup.html
+package-lock.json
