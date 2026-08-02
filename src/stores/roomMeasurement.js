@@ -85,18 +85,6 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
       return isRoomClosed(state.walls, state.corners)
     },
 
-    // Динамические тексты
-    cornerSubtitle: (state) => {
-      const wallNum = state.walls.length
-      if (wallNum === 1) {
-        return `После стены с дверью (${state.walls[0]} см), какой угол образуется при повороте направо?`
-      } else {
-        return `После ${wallNum}-й стены (${state.walls[wallNum-1]} см), какой угол образуется при повороте направо?`
-      }
-    },
-    nextWallTitle: (state) => `Стена №${state.walls.length + 1}`,
-    nextWallSubtitle: (state) => `Измерьте ${state.walls.length + 1}-ю стену, продолжая движение по часовой стрелке`,
-    showFinishFromCorner: (state) => state.walls.length >= 3,
     shouldAddDiagonal: (state) => state.walls.length >= 4
   },
 
@@ -124,9 +112,6 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
           break
         case STEPS.NEXT_WALL:
           svgStore.drawNextWallPreview(this.walls, this.corners, parseFloat(this.inputs.nextWall) || 250)
-          break
-        case STEPS.WALL_AND_CORNER:
-          svgStore.drawWallAndCornerPreview(this.walls, this.corners, parseFloat(this.inputs.nextWall) || null, this.selectedCorner)
           break
         case STEPS.DIAGONAL:
           svgStore.drawDiagonalPreview(this.walls, this.corners, this.selectedDiagonalFrom, this.selectedDiagonalTo, parseFloat(this.inputs.diagonal) || null, this.diagonals)
@@ -160,48 +145,9 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
           }
           this.selectedCorner = null
           this.goToStep(STEPS.CORNER_SELECTION)
-        } else if (this.currentStep === STEPS.WALL_AND_CORNER) {
-          // Вернуться назад в цепочке стен
-          if (this.walls.length === 1) {
-            // Вернуться к первой стене (удаляем первую стену)
-            this.walls.pop()
-            this.selectedCorner = null
-            this.goToStep(STEPS.FIRST_WALL)
-          } else if (this.walls.length === 2) {
-            // Вернуться к выбору угла после первой стены
-            // Удаляем последнюю стену и угол
-            this.walls.pop()
-            if (this.corners.length > 0) {
-              this.corners.pop()
-            }
-            this.selectedCorner = null
-            this.goToStep(STEPS.CORNER_SELECTION)
-          } else {
-            // Удалить последнюю стену и угол
-            this.walls.pop()
-            if (this.corners.length > 0 && this.corners.length >= this.walls.length) {
-              this.selectedCorner = this.corners.pop()
-            } else {
-              this.selectedCorner = 'inner'
-            }
-            // Восстанавливаем значение следующей стены
-            if (this.walls.length > 0) {
-              this.inputs.nextWall = String(this.walls[this.walls.length - 1])
-            }
-            this.goToStep(STEPS.WALL_AND_CORNER)
-          }
         } else if (this.currentStep === STEPS.DIAGONAL) {
           // Вернуться к последнему шагу добавления стены
-          // Определяем, была ли комната замкнута
-          if (this.walls.length >= 4) {
-            // Комната была замкнута, возвращаемся к WALL_AND_CORNER
-            // Но нужно восстановить состояние - удалить последнюю стену
-            // Но это сложно, так как мы не знаем, была ли она добавлена
-            // Просто возвращаемся к WALL_AND_CORNER
-            this.goToStep(STEPS.WALL_AND_CORNER)
-          } else {
-            this.goToStep(STEPS.WALL_AND_CORNER)
-          }
+          this.goToStep(STEPS.NEXT_WALL)
         } else if (this.currentStep === STEPS.FIXTURES) {
           // Вернуться к диагоналям
           this.goToStep(STEPS.DIAGONAL)
@@ -270,19 +216,9 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     handleCornerSelection(type) {
       this.selectedCorner = type
       const svgStore = useSvgRendererStore()
-
-      // Для последующих шагов обновляем превью стены и угла
-      // Если комната замкнется, не показывать угол в превью
-      const nextWall = parseFloat(this.inputs.nextWall)
-      if (nextWall) {
-        const willBeClosed = isRoomClosed(this.walls, this.corners, nextWall, type)
-        svgStore.drawWallAndCornerPreview(this.walls, this.corners, nextWall, willBeClosed ? null : type)
-      } else {
-        svgStore.drawCornerPreview(this.walls, this.corners, type)
-      }
+      svgStore.drawCornerPreview(this.walls, this.corners, type)
     },
 
-    // Обработчики объединённого шага (стена + угол)
     handleNextWallInput(value) {
       this.inputs.nextWall = value
       if (value && !this.nextWallValid) {
@@ -292,10 +228,7 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         this.errors.nextWall = false
         if (this.nextWallValid) {
           const svgStore = useSvgRendererStore()
-          // Если комната замкнется с этой стеной, не показывать угол в превью
-          const corner = this.selectedCorner || 'inner'
-          const willBeClosed = isRoomClosed(this.walls, this.corners, parseFloat(value), corner)
-          svgStore.drawWallAndCornerPreview(this.walls, this.corners, parseFloat(value), willBeClosed ? null : corner)
+          svgStore.drawNextWallPreview(this.walls, this.corners, parseFloat(value))
         }
       }
     },
@@ -326,55 +259,6 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         // Комната не замкнулась - переходим к выбору угла
         this.selectedCorner = null
         this.goToStep(STEPS.CORNER_SELECTION)
-      }
-    },
-
-    handleWallAndCornerNext() {
-      if (!this.nextWallValid) return
-
-      const value = parseFloat(this.inputs.nextWall)
-
-      // Если угол не выбран, используем внутренний по умолчанию
-      const corner = this.selectedCorner || 'inner'
-
-      // Проверяем, замкнется ли комната после добавления этой стены
-      const willBeClosed = isRoomClosed(this.walls, this.corners, value, corner)
-
-      // Если комната замкнется, угол не нужен
-      if (willBeClosed) {
-        // Добавить только стену (без угла, так как комната уже замкнута)
-        this.walls.push(value)
-
-        // Увеличить stepIndex для прогресса
-        this.stepIndex = this.walls.length
-
-        // Сбросить для следующего цикла (значения не нужны, так как переходим дальше)
-        this.inputs.nextWall = '250'
-        this.selectedCorner = 'inner'
-
-        // Перейти к следующему шагу (диагонали или результатам)
-        this.handleFinishRoom()
-      } else {
-        // Если комната не замкнется, нужен угол (используем дефолтный, если не выбран)
-        // Добавить стену
-        this.walls.push(value)
-        
-        // Если угол уже был добавлен (при возврате назад), заменяем его
-        if (this.corners.length > 0 && this.corners.length === this.walls.length - 1) {
-          this.corners[this.corners.length - 1] = corner
-        } else if (this.corners.length < this.walls.length) {
-          this.corners.push(corner)
-        }
-
-        // Увеличить stepIndex для прогресса
-        this.stepIndex = this.walls.length
-
-        // Сбросить для следующего цикла (с значениями по умолчанию)
-        this.inputs.nextWall = '250'
-        this.selectedCorner = 'inner'
-
-        // Продолжить на том же шаге для следующей стены
-        this.goToStep(STEPS.WALL_AND_CORNER)
       }
     },
 
@@ -658,6 +542,11 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         this.fixtures.lights = 0
         this.fixtures.pipes = 0
         this.fixtures.other = 0
+        this.fixturePositions.lights = []
+        this.fixturePositions.pipes = []
+        this.fixturePositions.other = []
+        this.results.perimeter = '0.00'
+        this.results.area = '0.00'
         this.goToStep(STEPS.FIRST_WALL)
       }
     },
@@ -669,7 +558,7 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
         navigator.share({
           title: 'Результат замера комнаты',
           text: shareText
-        }).catch(console.log)
+        }).catch(console.error)
       } else {
         navigator.clipboard.writeText(shareText).then(() => {
           alert('✅ Результат скопирован в буфер обмена')
