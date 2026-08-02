@@ -2,6 +2,12 @@
   "name": "potolok-wizard",
   "version": "1.0.0",
   "type": "module",
+  "description": "Пошаговый мастер замера комнаты для расчёта натяжного потолка",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zumix26/potolok.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
