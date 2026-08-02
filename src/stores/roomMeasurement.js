@@ -75,11 +75,16 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
       const value = parseFloat(state.inputs.diagonal)
       return value >= VALIDATION.DIAGONAL_MIN && value <= VALIDATION.DIAGONAL_MAX
     },
-    
+
     // Проверка замкнутости комнаты
     isRoomClosedWithNewWall: (state) => {
       if (!state.nextWallValid) return false
-      return isRoomClosed(state.walls, state.corners, parseFloat(state.inputs.nextWall), state.selectedCorner)
+      return isRoomClosed(
+        state.walls,
+        state.corners,
+        parseFloat(state.inputs.nextWall),
+        state.selectedCorner
+      )
     },
     isRoomClosed: (state) => {
       return isRoomClosed(state.walls, state.corners)
@@ -89,9 +94,31 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
   },
 
   actions: {
+    // Применить значение поля ввода длины: на 300мс подсветить ошибку при
+    // некорректном вводе, иначе сбросить ошибку и (если значение валидно) выполнить onValid.
+    validateLengthInput(field, value, validGetter, onValid) {
+      this.inputs[field] = value
+      if (value && !this[validGetter]) {
+        this.errors[field] = true
+        setTimeout(() => {
+          this.errors[field] = false
+        }, 300)
+      } else {
+        this.errors[field] = false
+        if (this[validGetter]) onValid()
+      }
+    },
+
     // Навигация
     goToStep(stepName) {
-      const stepOrder = [STEPS.FIRST_WALL, STEPS.CORNER_SELECTION, STEPS.NEXT_WALL, STEPS.DIAGONAL, STEPS.FIXTURES, STEPS.RESULT]
+      const stepOrder = [
+        STEPS.FIRST_WALL,
+        STEPS.CORNER_SELECTION,
+        STEPS.NEXT_WALL,
+        STEPS.DIAGONAL,
+        STEPS.FIXTURES,
+        STEPS.RESULT
+      ]
       const currentIndex = stepOrder.indexOf(this.currentStep)
       const targetIndex = stepOrder.indexOf(stepName)
 
@@ -103,7 +130,7 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
 
       // Обновить SVG preview для нового шага
       const svgStore = useSvgRendererStore()
-      switch(stepName) {
+      switch (stepName) {
         case STEPS.FIRST_WALL:
           svgStore.drawFirstWallPreview(parseFloat(this.inputs.firstWall) || 250, true)
           break
@@ -111,10 +138,21 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
           svgStore.drawCornerPreview(this.walls, this.corners, this.selectedCorner)
           break
         case STEPS.NEXT_WALL:
-          svgStore.drawNextWallPreview(this.walls, this.corners, parseFloat(this.inputs.nextWall) || 250)
+          svgStore.drawNextWallPreview(
+            this.walls,
+            this.corners,
+            parseFloat(this.inputs.nextWall) || 250
+          )
           break
         case STEPS.DIAGONAL:
-          svgStore.drawDiagonalPreview(this.walls, this.corners, this.selectedDiagonalFrom, this.selectedDiagonalTo, parseFloat(this.inputs.diagonal) || null, this.diagonals)
+          svgStore.drawDiagonalPreview(
+            this.walls,
+            this.corners,
+            this.selectedDiagonalFrom,
+            this.selectedDiagonalTo,
+            parseFloat(this.inputs.diagonal) || null,
+            this.diagonals
+          )
           break
         case STEPS.FIXTURES:
           svgStore.drawFixturesPreview(this.walls, this.corners, this.fixturePositions)
@@ -164,17 +202,9 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
 
     // Обработчики первой стены
     handleFirstWallInput(value) {
-      this.inputs.firstWall = value
-      if (value && !this.firstWallValid) {
-        this.errors.firstWall = true
-        setTimeout(() => { this.errors.firstWall = false }, 300)
-      } else {
-        this.errors.firstWall = false
-        if (this.firstWallValid) {
-          const svgStore = useSvgRendererStore()
-          svgStore.drawFirstWallPreview(parseFloat(value))
-        }
-      }
+      this.validateLengthInput('firstWall', value, 'firstWallValid', () => {
+        useSvgRendererStore().drawFirstWallPreview(parseFloat(value))
+      })
     },
 
     handleFirstWallNext() {
@@ -220,17 +250,9 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     },
 
     handleNextWallInput(value) {
-      this.inputs.nextWall = value
-      if (value && !this.nextWallValid) {
-        this.errors.nextWall = true
-        setTimeout(() => { this.errors.nextWall = false }, 300)
-      } else {
-        this.errors.nextWall = false
-        if (this.nextWallValid) {
-          const svgStore = useSvgRendererStore()
-          svgStore.drawNextWallPreview(this.walls, this.corners, parseFloat(value))
-        }
-      }
+      this.validateLengthInput('nextWall', value, 'nextWallValid', () => {
+        useSvgRendererStore().drawNextWallPreview(this.walls, this.corners, parseFloat(value))
+      })
     },
 
     handleNextWallNext() {
@@ -299,41 +321,39 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
     },
 
     handleDiagonalInput(value) {
-      this.inputs.diagonal = value
-      if (value && !this.diagonalValid) {
-        this.errors.diagonal = true
-        setTimeout(() => { this.errors.diagonal = false }, 300)
-      } else {
-        this.errors.diagonal = false
-        if (this.diagonalValid) {
-          const svgStore = useSvgRendererStore()
-          svgStore.drawDiagonalPreview(
-            this.walls,
-            this.corners,
-            this.selectedDiagonalFrom,
-            this.selectedDiagonalTo,
-            parseFloat(value),
-            this.diagonals
-          )
-        }
-      }
+      this.validateLengthInput('diagonal', value, 'diagonalValid', () => {
+        useSvgRendererStore().drawDiagonalPreview(
+          this.walls,
+          this.corners,
+          this.selectedDiagonalFrom,
+          this.selectedDiagonalTo,
+          parseFloat(value),
+          this.diagonals
+        )
+      })
     },
 
     handleAddDiagonal() {
-      if (!this.diagonalValid || this.selectedDiagonalFrom === null || this.selectedDiagonalTo === null) return
-      const value = parseFloat(this.inputs.diagonal)
-      
-      // Проверка на дубликаты
-      const isDuplicate = this.diagonals.some(d => 
-        (d.from === this.selectedDiagonalFrom && d.to === this.selectedDiagonalTo) ||
-        (d.from === this.selectedDiagonalTo && d.to === this.selectedDiagonalFrom)
+      if (
+        !this.diagonalValid ||
+        this.selectedDiagonalFrom === null ||
+        this.selectedDiagonalTo === null
       )
-      
+        return
+      const value = parseFloat(this.inputs.diagonal)
+
+      // Проверка на дубликаты
+      const isDuplicate = this.diagonals.some(
+        (d) =>
+          (d.from === this.selectedDiagonalFrom && d.to === this.selectedDiagonalTo) ||
+          (d.from === this.selectedDiagonalTo && d.to === this.selectedDiagonalFrom)
+      )
+
       if (isDuplicate) {
         alert('Эта диагональ уже добавлена!')
         return
       }
-      
+
       this.diagonals.push({
         from: this.selectedDiagonalFrom,
         to: this.selectedDiagonalTo,
@@ -372,122 +392,50 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
       this.goToStep(STEPS.FIXTURES)
     },
 
-    // Обработчики элементов
-    // Сохранить текущие позиции из DOM перед перерисовкой
-    saveCurrentFixturePositions() {
-      const svgElement = document.querySelector('.preview-svg')
-      if (!svgElement) return
-      
-      // Сохраняем позиции всех элементов из DOM
-      const fixtureItems = svgElement.querySelectorAll('.fixture-item')
-      fixtureItems.forEach((item) => {
-        const type = item.dataset.type
-        const id = parseFloat(item.dataset.id)
-        const transform = item.getAttribute('transform')
-        const match = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/)
-        if (match && type && !isNaN(id)) {
-          const x = parseFloat(match[1])
-          const y = parseFloat(match[2])
-          if (!isNaN(x) && !isNaN(y)) {
-            this.updateFixturePosition(type, id, x, y)
-          }
+    // Обработчики элементов.
+    // Позиции уже размещённых элементов приходят в реальном времени через
+    // updateFixturePosition (drag в SVGRenderer), так что стор всегда хранит
+    // актуальные координаты — здесь остаётся только добавить/убрать лишние.
+    updateFixtureTypeCount(fixtureType, inputKey, value) {
+      this.inputs[inputKey] = value
+      const count = parseInt(value) || 0
+      const oldCount = this.fixtures[fixtureType]
+      this.fixtures[fixtureType] = count
+
+      const positions = this.fixturePositions[fixtureType]
+      if (count > oldCount) {
+        for (let i = oldCount; i < count; i++) {
+          positions.push({
+            id: Date.now() + i + Math.random(),
+            x: 50 + Math.random() * 200,
+            y: 50 + Math.random() * 150
+          })
         }
-      })
+      } else if (count < oldCount) {
+        this.fixturePositions[fixtureType] = positions.slice(0, count)
+      }
+
+      const svgStore = useSvgRendererStore()
+      svgStore.drawFixturesPreview(this.walls, this.corners, this.fixturePositions)
     },
 
     handleFixtureCountInput(value) {
-      // Сохраняем текущие позиции ПЕРЕД изменением
-      this.saveCurrentFixturePositions()
-      
-      this.inputs.fixtureCount = value
-      const count = parseInt(value) || 0
-      const oldCount = this.fixtures.lights
-      this.fixtures.lights = count
-      
-      // Обновить позиции: добавить новые или удалить лишние
-      // ВАЖНО: сохраняем существующие позиции, только добавляем/удаляем
-      if (count > oldCount) {
-        // Добавить новые светильники со случайными позициями
-        for (let i = oldCount; i < count; i++) {
-          this.fixturePositions.lights.push({
-            id: Date.now() + i + Math.random(),
-            x: 50 + Math.random() * 200,
-            y: 50 + Math.random() * 150
-          })
-        }
-      } else if (count < oldCount) {
-        // Удалить лишние (только последние)
-        this.fixturePositions.lights = this.fixturePositions.lights.slice(0, count)
-      }
-      
-      // Обновить SVG (позиции других элементов сохраняются, так как мы не трогаем их массивы)
-      const svgStore = useSvgRendererStore()
-      svgStore.drawFixturesPreview(this.walls, this.corners, this.fixturePositions)
+      this.updateFixtureTypeCount('lights', 'fixtureCount', value)
     },
 
     handlePipeCountInput(value) {
-      // Сохраняем текущие позиции ПЕРЕД изменением
-      this.saveCurrentFixturePositions()
-      
-      this.inputs.pipeCount = value
-      const count = parseInt(value) || 0
-      const oldCount = this.fixtures.pipes
-      this.fixtures.pipes = count
-      
-      // ВАЖНО: сохраняем существующие позиции других элементов
-      // Мы изменяем только массив pipes, не трогая lights и other
-      if (count > oldCount) {
-        for (let i = oldCount; i < count; i++) {
-          this.fixturePositions.pipes.push({
-            id: Date.now() + i + Math.random(),
-            x: 50 + Math.random() * 200,
-            y: 50 + Math.random() * 150
-          })
-        }
-      } else if (count < oldCount) {
-        // Удалить лишние (только последние)
-        this.fixturePositions.pipes = this.fixturePositions.pipes.slice(0, count)
-      }
-      
-      // Обновить SVG (позиции других элементов сохраняются, так как мы не трогаем их массивы)
-      const svgStore = useSvgRendererStore()
-      svgStore.drawFixturesPreview(this.walls, this.corners, this.fixturePositions)
+      this.updateFixtureTypeCount('pipes', 'pipeCount', value)
     },
 
     handleOtherCountInput(value) {
-      // Сохраняем текущие позиции ПЕРЕД изменением
-      this.saveCurrentFixturePositions()
-      
-      this.inputs.otherCount = value
-      const count = parseInt(value) || 0
-      const oldCount = this.fixtures.other
-      this.fixtures.other = count
-      
-      // ВАЖНО: сохраняем существующие позиции других элементов
-      // Мы изменяем только массив other, не трогая lights и pipes
-      if (count > oldCount) {
-        for (let i = oldCount; i < count; i++) {
-          this.fixturePositions.other.push({
-            id: Date.now() + i + Math.random(),
-            x: 50 + Math.random() * 200,
-            y: 50 + Math.random() * 150
-          })
-        }
-      } else if (count < oldCount) {
-        // Удалить лишние (только последние)
-        this.fixturePositions.other = this.fixturePositions.other.slice(0, count)
-      }
-      
-      // Обновить SVG (позиции других элементов сохраняются, так как мы не трогаем их массивы)
-      const svgStore = useSvgRendererStore()
-      svgStore.drawFixturesPreview(this.walls, this.corners, this.fixturePositions)
+      this.updateFixtureTypeCount('other', 'otherCount', value)
     },
 
     updateFixturePosition(type, id, x, y) {
       const positions = this.fixturePositions[type]
       if (!positions) return
-      
-      const index = positions.findIndex(p => p.id === id)
+
+      const index = positions.findIndex((p) => p.id === id)
       if (index !== -1) {
         // Обновляем позицию напрямую в массиве (реактивно)
         positions[index] = {
@@ -555,16 +503,21 @@ export const useRoomMeasurementStore = defineStore('roomMeasurement', {
       const shareText = `Результат замера комнаты:\n📏 Периметр: ${this.results.perimeter} м\n📐 Площадь: ${this.results.area} м²\n\n#potolok_io #замер_комнаты`
 
       if (navigator.share) {
-        navigator.share({
-          title: 'Результат замера комнаты',
-          text: shareText
-        }).catch(console.error)
+        navigator
+          .share({
+            title: 'Результат замера комнаты',
+            text: shareText
+          })
+          .catch(console.error)
       } else {
-        navigator.clipboard.writeText(shareText).then(() => {
-          alert('✅ Результат скопирован в буфер обмена')
-        }).catch(() => {
-          alert('📋 Скопируйте результат:\n\n' + shareText)
-        })
+        navigator.clipboard
+          .writeText(shareText)
+          .then(() => {
+            alert('✅ Результат скопирован в буфер обмена')
+          })
+          .catch(() => {
+            alert('📋 Скопируйте результат:\n\n' + shareText)
+          })
       }
     }
   }

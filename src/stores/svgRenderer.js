@@ -1,15 +1,71 @@
 import { defineStore } from 'pinia'
 import { calculateRoomPointsForPreview, calculateBoundingBox } from '../utils/roomCalculations'
 
+// Комната считается замкнутой на превью, если последняя точка близка к первой.
+// В этом случае последнюю (дублирующую) точку не нужно рисовать отдельно.
+function getVisiblePoints(points) {
+  const isClosed =
+    points.length > 2 &&
+    Math.sqrt(
+      Math.pow(points[points.length - 1].x - points[0].x, 2) +
+        Math.pow(points[points.length - 1].y - points[0].y, 2)
+    ) < 5
+  return { isClosed, visiblePoints: isClosed ? points.slice(0, -1) : points }
+}
+
+// Точка превью следующего угла: поворот на 90° от направления последней стены —
+// вправо (по часовой) для внутреннего угла, влево для внешнего.
+function rotateCornerPoint(lastPoint, secondLastPoint, cornerType, previewLength) {
+  if (
+    isNaN(lastPoint.x) ||
+    isNaN(lastPoint.y) ||
+    isNaN(secondLastPoint.x) ||
+    isNaN(secondLastPoint.y)
+  ) {
+    return null
+  }
+  const currentAngle = Math.atan2(lastPoint.y - secondLastPoint.y, lastPoint.x - secondLastPoint.x)
+  const nextAngle = cornerType === 'inner' ? currentAngle + Math.PI / 2 : currentAngle - Math.PI / 2
+  const nextX = lastPoint.x + Math.cos(nextAngle) * previewLength
+  const nextY = lastPoint.y + Math.sin(nextAngle) * previewLength
+  return isNaN(nextX) || isNaN(nextY) ? null : { x: nextX, y: nextY }
+}
+
+const FIXTURE_MARKUP = {
+  lights:
+    '<circle r="10" fill="#FFD700" stroke="white" stroke-width="2"/><circle r="6" fill="none" stroke="white" stroke-width="1.5" opacity="0.8"/><line x1="-4" y1="0" x2="4" y2="0" stroke="white" stroke-width="1.5"/><line x1="0" y1="-4" x2="0" y2="4" stroke="white" stroke-width="1.5"/>',
+  pipes:
+    '<rect x="-8" y="-8" width="16" height="16" fill="#8B4513" stroke="white" stroke-width="2" rx="2"/><line x1="-5" y1="0" x2="5" y2="0" stroke="white" stroke-width="1.5"/><line x1="0" y1="-5" x2="0" y2="5" stroke="white" stroke-width="1.5"/>',
+  other:
+    '<rect x="-7" y="-7" width="14" height="14" fill="#808080" stroke="white" stroke-width="2" rx="2"/><line x1="-4" y1="-4" x2="4" y2="4" stroke="white" stroke-width="1.5"/><line x1="4" y1="-4" x2="-4" y2="4" stroke="white" stroke-width="1.5"/>'
+}
+
+// Светильники/трубы/другие элементы на превью. interactive=true добавляет
+// data-атрибуты и курсор для перетаскивания (шаг "Элементы"); иначе — статичная отметка (шаг "Результат").
+function renderFixtureMarkers(fixturePositions, { interactive = false } = {}) {
+  let html = ''
+  for (const type of ['lights', 'pipes', 'other']) {
+    const items = fixturePositions[type] || []
+    items.forEach((item) => {
+      if (!item || typeof item.x !== 'number' || typeof item.y !== 'number') return
+      const dragAttrs = interactive
+        ? ` class="fixture-item" data-type="${type}" data-id="${item.id}" style="cursor: move;"`
+        : ''
+      html += `<g transform="translate(${item.x}, ${item.y})"${dragAttrs}>${FIXTURE_MARKUP[type]}</g>`
+    })
+  }
+  return html
+}
+
 export const useSvgRendererStore = defineStore('svgRenderer', {
   state: () => ({
     svgCache: {
       'first-wall': { content: '', viewBox: '0 0 300 200' },
       'corner-selection': { content: '', viewBox: '0 0 300 200' },
       'next-wall': { content: '', viewBox: '0 0 300 200' },
-      'diagonal': { content: '', viewBox: '0 0 300 200' },
-      'fixtures': { content: '', viewBox: '0 0 300 200' },
-      'result': { content: '', viewBox: '0 0 300 200' }
+      diagonal: { content: '', viewBox: '0 0 300 200' },
+      fixtures: { content: '', viewBox: '0 0 300 200' },
+      result: { content: '', viewBox: '0 0 300 200' }
     }
   }),
 
@@ -26,12 +82,12 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       // Фиксированный размер канваса - увеличенная высота
       const canvasWidth = 300
       const canvasHeight = 280
-      
+
       // Фиксированные координаты для размещения стены
       const startX = 30
       const startY = 50
       const availableWidth = 240 // Доступная ширина для стены
-      
+
       // Вычисляем масштаб, чтобы стена поместилась в доступное пространство
       // Используем более крупный масштаб для лучшей видимости
       // Базовый масштаб: 1 см = 0.8 единицы SVG (для стены 250 см = 200 единиц)
@@ -40,16 +96,16 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       const minLength = 50
       const maxLength = 2000
       const normalizedLength = Math.max(minLength, Math.min(maxLength, length))
-      
+
       // Масштабируем длину стены
       let wallLength = normalizedLength * baseScale
-      
+
       // Если стена слишком длинная, уменьшаем масштаб чтобы поместилась
       if (wallLength > availableWidth) {
         const scale = availableWidth / normalizedLength
         wallLength = normalizedLength * scale
       }
-      
+
       const endX = startX + wallLength
       const endY = startY
 
@@ -94,7 +150,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
           <rect x="${midX - 35}" y="${startY + 3}" width="70" height="28"
                 rx="6" fill="white"/>
           <text x="${midX}" y="${startY + 22}" text-anchor="middle"
-                font-size="20" font-weight="800" fill="#2563EB">${showQuestionMark ? '?' : (length && length > 0 ? length + ' см' : '?')}</text>
+                font-size="20" font-weight="800" fill="#2563EB">${showQuestionMark ? '?' : length && length > 0 ? length + ' см' : '?'}</text>
 
           <!-- You are here - centered on the wall but at distance from it -->
           <!-- Wall is horizontal, so place circle below the wall -->
@@ -118,7 +174,8 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
     drawCornerPreview(walls, corners, cornerType = null) {
       if (walls.length === 0) {
-        const svg = '<text x="150" y="100" text-anchor="middle" class="room-label">Сначала добавьте стену</text>'
+        const svg =
+          '<text x="150" y="100" text-anchor="middle" class="room-label">Сначала добавьте стену</text>'
         this.svgCache['corner-selection'] = { content: svg, viewBox: '0 0 300 200' }
         return svg
       }
@@ -144,30 +201,24 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
             <circle cx="${endX}" cy="${endY}" r="6" class="room-corner active"/>
             <text x="${startX}" y="${startY + 20}" class="room-label">A</text>
             <text x="${endX}" y="${endY + 20}" class="room-label">B</text>
-            <text x="${startX + scaledLength/2}" y="${startY - 15}" class="room-dimension">${wallLength} см</text>
+            <text x="${startX + scaledLength / 2}" y="${startY - 15}" class="room-dimension">${wallLength} см</text>
           `
 
           if (cornerType) {
-            let nextX, nextY
             const previewLength = 60
-
-            // Человек ВНУТРИ комнаты движется слева направо (горизонтально)
-            // Поворот направо = вниз (+Y), поворот налево = вверх (-Y)
-            if (cornerType === 'inner') {
-              nextX = endX
-              nextY = endY + previewLength  // Поворот направо (вниз)
-            } else {
-              nextX = endX
-              nextY = endY - previewLength  // Поворот налево (вверх)
-            }
-
-            allPoints.push({ x: nextX, y: nextY })
+            const next = rotateCornerPoint(
+              { x: endX, y: endY },
+              { x: startX, y: startY },
+              cornerType,
+              previewLength
+            )
+            allPoints.push(next)
 
             html += `
-              <line x1="${endX}" y1="${endY}" x2="${nextX}" y2="${nextY}"
+              <line x1="${endX}" y1="${endY}" x2="${next.x}" y2="${next.y}"
                     stroke="#FF8C00" stroke-width="3" stroke-dasharray="5,3"/>
-              <circle cx="${nextX}" cy="${nextY}" r="6" class="room-corner next"/>
-              <text x="${nextX + 15}" y="${nextY + 5}" class="room-label" fill="#FF8C00">C?</text>
+              <circle cx="${next.x}" cy="${next.y}" r="6" class="room-corner next"/>
+              <text x="${next.x + 15}" y="${next.y + 5}" class="room-label" fill="#FF8C00">C?</text>
               <path d="M ${endX - 20} ${endY} A 20 20 0 0 ${cornerType === 'inner' ? '0' : '1'} ${endX} ${endY + (cornerType === 'inner' ? 20 : -20)}"
                     stroke="${cornerType === 'inner' ? '#10B981' : '#F59E0B'}"
                     stroke-width="3" fill="none" stroke-dasharray="3,2"/>
@@ -190,7 +241,8 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const points = calculateRoomPointsForPreview(walls, corners)
 
         if (points.length === 0) {
-          const svg = '<text x="150" y="100" text-anchor="middle" class="room-label">Ошибка расчета</text>'
+          const svg =
+            '<text x="150" y="100" text-anchor="middle" class="room-label">Ошибка расчета</text>'
           this.svgCache['corner-selection'] = { content: svg, viewBox: '0 0 300 200' }
           return svg
         }
@@ -204,7 +256,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
           if (isNaN(p1.x) || isNaN(p1.y) || isNaN(p2.x) || isNaN(p2.y)) continue
 
           html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
-
 
           const midX = (p1.x + p2.x) / 2
           const midY = (p1.y + p2.y) / 2
@@ -228,33 +279,14 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
 
         if (cornerType && points.length >= 2) {
           const lastPoint = points[points.length - 1]
-          const secondLastPoint = points[points.length - 2]
+          const next = rotateCornerPoint(lastPoint, points[points.length - 2], cornerType, 60)
 
-          if (!isNaN(lastPoint.x) && !isNaN(lastPoint.y) && !isNaN(secondLastPoint.x) && !isNaN(secondLastPoint.y)) {
-            const dx = lastPoint.x - secondLastPoint.x
-            const dy = lastPoint.y - secondLastPoint.y
-            const currentAngle = Math.atan2(dy, dx)
-
-            let nextAngle
-            // Человек ВНУТРИ комнаты, поворот направо = +90° в SVG (вниз)
-            if (cornerType === 'inner') {
-              nextAngle = currentAngle + Math.PI / 2  // Поворот направо (вниз)
-            } else {
-              nextAngle = currentAngle - Math.PI / 2  // Поворот налево (вверх)
-            }
-
-            const previewLength = 60
-            const nextX = lastPoint.x + Math.cos(nextAngle) * previewLength
-            const nextY = lastPoint.y + Math.sin(nextAngle) * previewLength
-
-            if (!isNaN(nextX) && !isNaN(nextY)) {
-              allPoints.push({ x: nextX, y: nextY })
-
-              html += `
-                <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${nextX}" y2="${nextY}"
-                      class="room-wall" stroke-width="6"/>
-              `
-            }
+          if (next) {
+            allPoints.push(next)
+            html += `
+              <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${next.x}" y2="${next.y}"
+                    class="room-wall" stroke-width="6"/>
+            `
           }
         }
 
@@ -267,7 +299,8 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         return html
       } catch (error) {
         console.error('Error drawing corner preview:', error)
-        const svg = '<text x="150" y="100" text-anchor="middle" class="room-label">Ошибка отображения</text>'
+        const svg =
+          '<text x="150" y="100" text-anchor="middle" class="room-label">Ошибка отображения</text>'
         this.svgCache['corner-selection'] = { content: svg, viewBox: '0 0 300 200' }
         return svg
       }
@@ -319,15 +352,9 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       }
 
-      // Проверяем, замкнута ли комната (последняя точка близка к первой)
-      const isClosed = points.length > 2 && 
-        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
-                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
-      
-      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
-      const pointsToShow = isClosed ? points.slice(0, -1) : points
-      
-      pointsToShow.forEach((point, i) => {
+      const { isClosed, visiblePoints } = getVisiblePoints(points)
+
+      visiblePoints.forEach((point, i) => {
         const isActive = !isClosed && i === points.length - 1
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="6"
@@ -341,33 +368,15 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       // Показать предпросмотр последнего выбранного угла
       if (selectedCorner && points.length >= 2) {
         const lastPoint = points[points.length - 1]
-        const secondLastPoint = points[points.length - 2]
+        const next = rotateCornerPoint(lastPoint, points[points.length - 2], selectedCorner, 60)
 
-        if (!isNaN(lastPoint.x) && !isNaN(lastPoint.y) && !isNaN(secondLastPoint.x) && !isNaN(secondLastPoint.y)) {
-          const dx = lastPoint.x - secondLastPoint.x
-          const dy = lastPoint.y - secondLastPoint.y
-          const currentAngle = Math.atan2(dy, dx)
-
-          let nextAngle
-          if (selectedCorner === 'inner') {
-            nextAngle = currentAngle + Math.PI / 2  // Поворот направо
-          } else {
-            nextAngle = currentAngle - Math.PI / 2  // Поворот налево
-          }
-
-          const previewLength = 60
-          const nextX = lastPoint.x + Math.cos(nextAngle) * previewLength
-          const nextY = lastPoint.y + Math.sin(nextAngle) * previewLength
-
-          if (!isNaN(nextX) && !isNaN(nextY)) {
-            allPoints.push({ x: nextX, y: nextY })
-
-            html += `
-              <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${nextX}" y2="${nextY}"
-                    stroke="#10B981" stroke-width="3" stroke-dasharray="5,3" opacity="0.6"/>
-              <circle cx="${nextX}" cy="${nextY}" r="6" fill="#10B981" opacity="0.6"/>
-            `
-          }
+        if (next) {
+          allPoints.push(next)
+          html += `
+            <line x1="${lastPoint.x}" y1="${lastPoint.y}" x2="${next.x}" y2="${next.y}"
+                  stroke="#10B981" stroke-width="3" stroke-dasharray="5,3" opacity="0.6"/>
+            <circle cx="${next.x}" cy="${next.y}" r="6" fill="#10B981" opacity="0.6"/>
+          `
         }
       }
 
@@ -378,26 +387,26 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const p2 = points[lastWallIndex + 1]
         const wallMidX = (p1.x + p2.x) / 2
         const wallMidY = (p1.y + p2.y) / 2
-        
+
         // Вычисляем нормаль к стене (перпендикуляр) для размещения кружка
         const dx = p2.x - p1.x
         const dy = p2.y - p1.y
         const length = Math.sqrt(dx * dx + dy * dy) || 1
-        const perpX = -dy / length  // Перпендикулярный вектор
+        const perpX = -dy / length // Перпендикулярный вектор
         const perpY = dx / length
-        
+
         // Размещаем кружок на расстоянии 50 единиц от стены по нормали
         const distance = 50
         const circleX = wallMidX + perpX * distance
         const circleY = wallMidY + perpY * distance
-        
+
         // Короткая толстая стрелка от кружка к стене (в обратном направлении нормали)
-        const arrowLength = 15  // Короткая стрелка
+        const arrowLength = 15 // Короткая стрелка
         const arrowStartX = circleX - perpX * 8
         const arrowStartY = circleY - perpY * 8
         const arrowEndX = circleX - perpX * (8 + arrowLength)
         const arrowEndY = circleY - perpY * (8 + arrowLength)
-        
+
         html += `
         
          <line x1="${arrowStartX}" y1="${arrowStartY}" x2="${arrowEndX}" y2="${arrowEndY}"
@@ -425,7 +434,14 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       return html
     },
 
-    drawDiagonalPreview(walls, corners, fromIndex = null, toIndex = null, diagonalLength = null, existingDiagonals = []) {
+    drawDiagonalPreview(
+      walls,
+      corners,
+      fromIndex = null,
+      toIndex = null,
+      diagonalLength = null,
+      existingDiagonals = []
+    ) {
       const points = calculateRoomPointsForPreview(walls, corners)
       let html = ''
 
@@ -433,7 +449,6 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const p1 = points[i]
         const p2 = points[(i + 1) % points.length]
         html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
-
       }
 
       // Рисуем все существующие диагонали
@@ -458,7 +473,12 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       })
 
       // Рисуем текущую выбираемую диагональ (если выбраны оба угла)
-      if (fromIndex !== null && toIndex !== null && points.length > fromIndex && points.length > toIndex) {
+      if (
+        fromIndex !== null &&
+        toIndex !== null &&
+        points.length > fromIndex &&
+        points.length > toIndex
+      ) {
         const from = points[fromIndex]
         const to = points[toIndex]
 
@@ -480,15 +500,9 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       }
 
-      // Проверяем, замкнута ли комната (последняя точка близка к первой)
-      const isClosed = points.length > 2 && 
-        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
-                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
-      
-      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
-      const pointsToShow = isClosed ? points.slice(0, -1) : points
-      
-      pointsToShow.forEach((point, i) => {
+      const { visiblePoints } = getVisiblePoints(points)
+
+      visiblePoints.forEach((point, i) => {
         const isDiagonalPoint = i === fromIndex || i === toIndex
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="8"
@@ -519,43 +533,10 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
       }
 
       let html = ''
-      const pointsStr = points.map(p => `${p.x},${p.y}`).join(' ')
+      const pointsStr = points.map((p) => `${p.x},${p.y}`).join(' ')
       html += `<polygon points="${pointsStr}" fill="rgba(0, 102, 255, 0.1)" stroke="#0066FF" stroke-width="3"/>`
-      
-      // Рисуем светильники
-      fixturePositions.lights.forEach((light) => {
-        html += `
-          <g transform="translate(${light.x}, ${light.y})">
-            <circle r="10" fill="#FFD700" stroke="white" stroke-width="2"/>
-            <circle r="6" fill="none" stroke="white" stroke-width="1.5" opacity="0.8"/>
-            <line x1="-4" y1="0" x2="4" y2="0" stroke="white" stroke-width="1.5"/>
-            <line x1="0" y1="-4" x2="0" y2="4" stroke="white" stroke-width="1.5"/>
-          </g>
-        `
-      })
 
-      // Рисуем трубы
-      fixturePositions.pipes.forEach((pipe) => {
-        html += `
-          <g transform="translate(${pipe.x}, ${pipe.y})">
-            <rect x="-8" y="-8" width="16" height="16" fill="#8B4513" stroke="white" stroke-width="2" rx="2"/>
-            <line x1="-5" y1="0" x2="5" y2="0" stroke="white" stroke-width="1.5"/>
-            <line x1="0" y1="-5" x2="0" y2="5" stroke="white" stroke-width="1.5"/>
-          </g>
-        `
-      })
-
-      // Рисуем другие элементы
-      fixturePositions.other.forEach((other) => {
-        html += `
-          <g transform="translate(${other.x}, ${other.y})">
-            <rect x="-7" y="-7" width="14" height="14" fill="#808080" stroke="white" stroke-width="2" rx="2"/>
-            <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" stroke-width="1.5"/>
-            <line x1="4" y1="-4" x2="-4" y2="4" stroke="white" stroke-width="1.5"/>
-          </g>
-        `
-      })
-
+      html += renderFixtureMarkers(fixturePositions)
 
       walls.forEach((length, i) => {
         if (i < points.length) {
@@ -565,7 +546,7 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
           const midY = (p1.y + p2.y) / 2
           const dx = p2.y - p1.y
           const dy = p1.x - p2.x
-          const len = Math.sqrt(dx*dx + dy*dy) || 1
+          const len = Math.sqrt(dx * dx + dy * dy) || 1
           const offsetX = (dx / len) * 15
           const offsetY = (dy / len) * 15
 
@@ -577,15 +558,9 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         }
       })
 
-      // Проверяем, замкнута ли комната (последняя точка близка к первой)
-      const isClosed = points.length > 2 && 
-        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
-                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
-      
-      // Показываем точки, но если комната замкнута, не показываем последнюю (она совпадает с первой)
-      const pointsToShow = isClosed ? points.slice(0, -1) : points
-      
-      pointsToShow.forEach((point, i) => {
+      const { visiblePoints } = getVisiblePoints(points)
+
+      visiblePoints.forEach((point, i) => {
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="4" fill="white" stroke="#0066FF" stroke-width="2"/>
           <text x="${point.x + 10}" y="${point.y - 10}" class="room-label">
@@ -612,59 +587,14 @@ export const useSvgRendererStore = defineStore('svgRenderer', {
         const p1 = points[i]
         const p2 = points[(i + 1) % points.length]
         html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="room-wall"/>`
-
       }
 
-      // Рисуем светильники (используем актуальные позиции из store)
-      const lights = fixturePositions.lights || []
-      lights.forEach((light) => {
-        if (light && typeof light.x === 'number' && typeof light.y === 'number') {
-          html += `
-            <g class="fixture-item" data-type="lights" data-id="${light.id}" transform="translate(${light.x}, ${light.y})" style="cursor: move;">
-              <circle r="10" fill="#FFD700" stroke="white" stroke-width="2"/>
-              <circle r="6" fill="none" stroke="white" stroke-width="1.5" opacity="0.8"/>
-              <line x1="-4" y1="0" x2="4" y2="0" stroke="white" stroke-width="1.5"/>
-              <line x1="0" y1="-4" x2="0" y2="4" stroke="white" stroke-width="1.5"/>
-            </g>
-          `
-        }
-      })
-
-      // Рисуем трубы (используем актуальные позиции из store)
-      const pipes = fixturePositions.pipes || []
-      pipes.forEach((pipe) => {
-        if (pipe && typeof pipe.x === 'number' && typeof pipe.y === 'number') {
-          html += `
-            <g class="fixture-item" data-type="pipes" data-id="${pipe.id}" transform="translate(${pipe.x}, ${pipe.y})" style="cursor: move;">
-              <rect x="-8" y="-8" width="16" height="16" fill="#8B4513" stroke="white" stroke-width="2" rx="2"/>
-              <line x1="-5" y1="0" x2="5" y2="0" stroke="white" stroke-width="1.5"/>
-              <line x1="0" y1="-5" x2="0" y2="5" stroke="white" stroke-width="1.5"/>
-            </g>
-          `
-        }
-      })
-
-      // Рисуем другие элементы (используем актуальные позиции из store)
-      const other = fixturePositions.other || []
-      other.forEach((item) => {
-        if (item && typeof item.x === 'number' && typeof item.y === 'number') {
-          html += `
-            <g class="fixture-item" data-type="other" data-id="${item.id}" transform="translate(${item.x}, ${item.y})" style="cursor: move;">
-              <rect x="-7" y="-7" width="14" height="14" fill="#808080" stroke="white" stroke-width="2" rx="2"/>
-              <line x1="-4" y1="-4" x2="4" y2="4" stroke="white" stroke-width="1.5"/>
-              <line x1="4" y1="-4" x2="-4" y2="4" stroke="white" stroke-width="1.5"/>
-            </g>
-          `
-        }
-      })
+      html += renderFixtureMarkers(fixturePositions, { interactive: true })
 
       // Рисуем углы комнаты
-      const isClosed = points.length > 2 && 
-        Math.sqrt(Math.pow(points[points.length - 1].x - points[0].x, 2) + 
-                  Math.pow(points[points.length - 1].y - points[0].y, 2)) < 5
-      const pointsToShow = isClosed ? points.slice(0, -1) : points
-      
-      pointsToShow.forEach((point, i) => {
+      const { visiblePoints } = getVisiblePoints(points)
+
+      visiblePoints.forEach((point, i) => {
         html += `
           <circle cx="${point.x}" cy="${point.y}" r="4" fill="white" stroke="#0066FF" stroke-width="2"/>
           <text x="${point.x + 10}" y="${point.y - 10}" class="room-label">
